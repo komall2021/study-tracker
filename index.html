@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>📚 Study Tracker</title>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#141922; --muted:#95a3b3; --text:#f6f7fb;
+    --accent:#7dd3fc; --accent2:#a78bfa; --good:#86efac; --warn:#fbbf24; --danger:#fb7185;
+    --ring-bg:#243046; --ring:#7dd3fc;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:linear-gradient(180deg,#0f1216,#0a0d11); color:var(--text);
+    font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, Noto Sans, "Apple Color Emoji","Segoe UI Emoji";
+    display:flex; justify-content:center; padding:24px;
+  }
+  .wrap{
+    width:100%; max-width:980px; display:grid; gap:16px;
+    grid-template-columns: 1.2fr 1fr;
+  }
+  @media (max-width:900px){ .wrap{ grid-template-columns:1fr } }
+  .card{
+    background:var(--panel); border:1px solid #1f2836; border-radius:16px; padding:16px; box-shadow:0 2px 18px rgb(0 0 0 / 30%);
+  }
+  h1{ margin:0 0 6px 0; font-size:22px; }
+  p.sub{margin:0; color:var(--muted)}
+  label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+  input, select, textarea{
+    width:100%; border:1px solid #223047; background:#0e141e; color:var(--text);
+    border-radius:10px; padding:10px 12px; outline:none; transition:border-color .2s;
+  }
+  input:focus, textarea:focus{ border-color: var(--accent)}
+  .row{ display:grid; grid-template-columns: 1fr 1fr; gap:12px }
+  .row-3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px }
+  .controls{ display:flex; gap:10px; flex-wrap:wrap }
+  button{
+    appearance:none; border:1px solid #243046; background:#121a27; color:var(--text);
+    padding:10px 14px; border-radius:12px; cursor:pointer; transition:transform .06s ease, background .15s, border-color .15s;
+    font-weight:600;
+  }
+  button:hover{ transform:translateY(-1px); }
+  .primary{ background:linear-gradient(135deg, var(--accent), var(--accent2)); border-color:transparent; color:#0b1020}
+  .danger{ border-color:#3a1820; background:#1e0f12; color:#ffd7de}
+  .ghost{ background:#0f1520 }
+  .good{ background:#0f1a13; border-color:#163323; color:#b8f9cf }
+  .warn{ background:#201a0c; border-color:#3b2d10; color:#fde7b0}
+  .muted{ color:var(--muted) }
+
+  /* Progress ring */
+  .ring{
+    width:140px; height:140px; border-radius:50%;
+    background:conic-gradient(var(--ring) 0deg, var(--ring) 0deg, var(--ring-bg) 0deg 360deg);
+    display:grid; place-items:center; margin:auto;
+  }
+  .ring > .inner{
+    width:110px; height:110px; border-radius:50%; background:#0e141e; display:grid; place-items:center;
+    box-shadow: inset 0 0 0 1px #1f2a3f;
+  }
+  .ring .value{ font-weight:800; font-size:20px }
+  .ring .cap{ font-size:11px; color:var(--muted) }
+
+  .meta{ display:flex; gap:12px; flex-wrap:wrap }
+  .badge{ padding:6px 10px; border-radius:999px; background:#0e141e; border:1px solid #223047; font-weight:600 }
+  .divider{ height:1px; background:#1f2836; margin:10px 0 12px 0 }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px }
+  th, td{ padding:6px 8px; border-bottom:1px solid #1f2836; color:#dfe6f5 }
+  th{ color:#9fb0c9; text-align:left; font-weight:700 }
+  .right{ text-align:right }
+  .empty{ color:var(--muted); text-align:center; padding:12px 0 }
+  .toast{border-left:4px solid var(--good); background:#0f1a13; padding:10px 12px; border-radius:10px;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Left column: Controls & Log -->
+    <section class="card">
+      <h1>📚 Study Tracker</h1>
+      <p class="sub">Personal, offline progress tracker. Data saved in your browser.</p>
+      <div class="divider"></div>
+
+      <div class="row">
+        <div>
+          <label>Subject</label>
+          <input id="subject" list="subject-list" placeholder="e.g., Algorithms" />
+          <datalist id="subject-list"></datalist>
+        </div>
+        <div>
+          <label>Note (optional)</label>
+          <input id="note" placeholder="topic / pages / tasks…" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Daily goal (hours)</label>
+          <input id="goal" type="number" min="0" max="24" step="0.5" value="6" />
+        </div>
+        <div>
+          <label>Session timer</label>
+          <div class="controls">
+            <button id="startBtn" class="primary">Start</button>
+            <button id="stopBtn"  class="danger" disabled>Stop</button>
+            <button id="resetTodayBtn" class="warn">Reset today</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="meta">
+        <div class="badge">⏱ <span id="sessionClock">00:00:00</span></div>
+        <div class="badge">📅 Today: <span id="todayTotal">0h 0m</span></div>
+        <div class="badge">🔥 Streak: <span id="streak">0 days</span></div>
+      </div>
+
+      <p id="toast" class="toast" style="display:none;margin-top:10px"></p>
+
+      <div class="divider"></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <h3 style="margin:0">Recent sessions</h3>
+        <div class="controls">
+          <button id="exportCsv" class="ghost">Export CSV</button>
+          <button id="clearAll" class="ghost">Clear all</button>
+        </div>
+      </div>
+
+      <div id="logWrap" style="max-height:280px; overflow:auto; margin-top:6px">
+        <table id="logTable">
+          <thead><tr>
+            <th>Start</th><th>End</th><th class="right">Minutes</th><th>Subject</th><th>Note</th>
+          </tr></thead>
+          <tbody id="logBody"><tr><td colspan="5" class="empty">No sessions yet.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Right column: Goal ring + Chart -->
+    <section class="card">
+      <div class="row">
+        <div>
+          <h3 style="margin:0 0 10px 0">Daily goal</h3>
+          <div class="ring" id="ring">
+            <div class="inner">
+              <div style="text-align:center">
+                <div class="value" id="ringValue">0%</div>
+                <div class="cap" id="ringCap">0 / 6h</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin:0 0 10px 0">Last 7 days</h3>
+          <canvas id="chart7" height="180"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+/* ------------------------- Storage & State ------------------------- */
+const LS_KEY = "study-tracker-log-v1";
+const LS_SUBJECTS = "study-tracker-subjects";
+const LS_GOAL = "study-tracker-goal";
+let LOG = loadLog();
+let subjectsSet = new Set(JSON.parse(localStorage.getItem(LS_SUBJECTS) || "[]"));
+let session = { running:false, start:null, timerId:null };
+
+/* ------------------------- Utilities ------------------------- */
+const pad = n => String(n).padStart(2, "0");
+const fmt = secs => {
+  const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
+  return `${pad(h)}:${pad(m)}:${pad(s)}`
+};
+const fmtHM = minutes => `${Math.floor(minutes/60)}h ${Math.round(minutes%60)}m`;
+const dateKey = d => d.toISOString().slice(0,10); // YYYY-MM-DD
+function human(dt){ return new Date(dt).toLocaleString([], {hour12:false}); }
+function saveLog(){ localStorage.setItem(LS_KEY, JSON.stringify(LOG)); }
+
+/* load / init */
+function loadLog(){
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]").map(r => ({...r, start:new Date(r.start), end:new Date(r.end)})); }
+  catch { return []; }
+}
+
+/* ------------------------- DOM Elements ------------------------- */
+const subjectEl = document.getElementById("subject");
+const noteEl = document.getElementById("note");
+const goalEl = document.getElementById("goal");
+const startBtn = document.getElementById("startBtn");
+const stopBtn  = document.getElementById("stopBtn");
+const resetTodayBtn = document.getElementById("resetTodayBtn");
+const sessionClock = document.getElementById("sessionClock");
+const todayTotal = document.getElementById("todayTotal");
+const streakEl = document.getElementById("streak");
+const ring = document.getElementById("ring");
+const ringValue = document.getElementById("ringValue");
+const ringCap = document.getElementById("ringCap");
+const toast = document.getElementById("toast");
+const exportCsvBtn = document.getElementById("exportCsv");
+const clearAllBtn = document.getElementById("clearAll");
+const logBody = document.getElementById("logBody");
+const subjectList = document.getElementById("subject-list");
+
+/* restore goal & subjects */
+goalEl.value = Number(localStorage.getItem(LS_GOAL) || goalEl.value);
+goalEl.addEventListener("change", () => {
+  localStorage.setItem(LS_GOAL, goalEl.value);
+  renderTotals();
+});
+function refreshSubjectList(){
+  subjectList.innerHTML = "";
+  [...subjectsSet].sort().forEach(s => {
+    const opt = document.createElement("option"); opt.value = s; subjectList.appendChild(opt);
+  });
+}
+refreshSubjectList();
+
+/* ------------------------- Chart Setup ------------------------- */
+const ctx = document.getElementById("chart7");
+let chart = new Chart(ctx, {
+  type: "bar",
+  data: { labels: [], datasets: [{ label:"Hours", data: [] /* default color */ }] },
+  options: {
+    responsive:true,
+    scales: { x: { ticks:{ color:"#c9d4e5" }}, y: { ticks:{ color:"#c9d4e5" }, beginAtZero:true } },
+    plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label:(c)=> `${c.formattedValue} h`} } }
+  }
+});
+
+/* ------------------------- Renderers ------------------------- */
+function renderLog(){
+  if(LOG.length===0){
+    logBody.innerHTML = `<tr><td colspan="5" class="empty">No sessions yet.</td></tr>`;
+    return;
+  }
+  logBody.innerHTML = LOG.slice().reverse().slice(0,50).map(s => `
+    <tr>
+      <td>${human(s.start)}</td>
+      <td>${human(s.end)}</td>
+      <td class="right">${s.minutes.toFixed(2)}</td>
+      <td>${s.subject||""}</td>
+      <td>${s.note||""}</td>
+    </tr>
+  `).join("");
+}
+
+function totalsByDay(){
+  const map = {};
+  for(const s of LOG){
+    const k = dateKey(new Date(s.start));
+    map[k] = (map[k]||0) + s.minutes;
+  }
+  return map;
+}
+
+function computeStreak(){
+  const byDay = totalsByDay();
+  let d = new Date(); d.setHours(0,0,0,0);
+  let streak = 0;
+  while(true){
+    const k = dateKey(d);
+    if((byDay[k]||0) > 0){ streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+
+function renderTotals(){
+  // Today minutes
+  const byDay = totalsByDay();
+  const now = new Date(); now.setHours(0,0,0,0);
+  const todayKey = dateKey(now);
+  const mins = byDay[todayKey] || 0;
+  todayTotal.textContent = fmtHM(mins);
+
+  // Goal progress ring
+  const goalH = Math.max(0, Number(goalEl.value)||0);
+  const pct = goalH>0 ? Math.min(100, Math.round((mins/60)/goalH*100)) : 0;
+  ring.style.background = `conic-gradient(var(--ring) 0deg ${pct*3.6}deg, var(--ring-bg) ${pct*3.6}deg 360deg)`;
+  ringValue.textContent = `${pct}%`;
+  ringCap.textContent = `${(mins/60).toFixed(1)} / ${goalH}h`;
+
+  // Streak
+  const s = computeStreak();
+  streakEl.textContent = `${s} ${s===1?'day':'days'}`;
+
+  // Chart: last 7 days
+  const labels = [];
+  const data = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+    const k = dateKey(d);
+    labels.push(d.toLocaleDateString([], {month:"short", day:"numeric"}));
+    data.push(((byDay[k]||0)/60).toFixed(2));
+  }
+  chart.data.labels = labels;
+  chart.data.datasets[0].data = data;
+  chart.update();
+}
+
+function toastMsg(text){
+  toast.textContent = text;
+  toast.style.display = "block";
+  setTimeout(()=> toast.style.display = "none", 2500);
+}
+
+/* ------------------------- Timer Control ------------------------- */
+function tick(){
+  if(!session.running) return;
+  const secs = Math.floor((Date.now() - session.start)/1000);
+  sessionClock.textContent = fmt(secs);
+}
+
+function start(){
+  if(session.running) return;
+  session.running = true;
+  session.start = Date.now();
+  session.timerId = setInterval(tick, 1000);
+  sessionClock.textContent = "00:00:00";
+  startBtn.disabled = true; stopBtn.disabled = false;
+}
+
+function stop(){
+  if(!session.running) return;
+  const end = Date.now();
+  clearInterval(session.timerId);
+  session.timerId = null;
+  session.running = false;
+
+  const minutes = Math.round(((end - session.start)/1000)/60 * 100) / 100;
+
+  // Save
+  const entry = {
+    start: new Date(session.start),
+    end:   new Date(end),
+    minutes,
+    subject: subjectEl.value || null,
+    note: noteEl.value || null
+  };
+  LOG.push(entry);
+  saveLog();
+
+  // Remember subject for datalist
+  if(entry.subject){ subjectsSet.add(entry.subject); localStorage.setItem(LS_SUBJECTS, JSON.stringify([...subjectsSet])); refreshSubjectList(); }
+
+  // UI
+  startBtn.disabled = false; stopBtn.disabled = true;
+  sessionClock.textContent = "00:00:00";
+  renderLog();
+  renderTotals();
+
+  // Random encouragement
+  const msgs = [
+    "Tiny steps add up. Proud of you. 💪",
+    "You showed up—that’s the hardest part. 🌟",
+    "Deep work now = future you smiling. 😊",
+    "Another brick in the wall of mastery. 🧱",
+    "Your consistency is your superpower. ⚡",
+    "One more focused block and you cross the line. 🏁",
+  ];
+  toastMsg(msgs[Math.floor(Math.random()*msgs.length)]);
+}
+
+function resetToday(){
+  const now = new Date(); now.setHours(0,0,0,0);
+  const k = dateKey(now);
+  LOG = LOG.filter(s => dateKey(new Date(s.start)) !== k);
+  saveLog();
+  renderLog(); renderTotals();
+  toastMsg("Cleared today’s entries.");
+}
+
+function exportCsv(){
+  if(LOG.length===0){ toastMsg("No data to export."); return; }
+  const header = ["start","end","minutes","subject","note"];
+  const rows = LOG.map(s => [new Date(s.start).toISOString(), new Date(s.end).toISOString(), s.minutes, (s.subject||""), (s.note||"")]);
+  const csv = [header.join(","), ...rows.map(r => r.map(x => String(x).replaceAll('"','""')).map(x => /,|"/.test(x)?`"${x}"`:x).join(","))].join("\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "study_log.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ------------------------- Events ------------------------- */
+startBtn.addEventListener("click", start);
+stopBtn.addEventListener("click", stop);
+resetTodayBtn.addEventListener("click", resetToday);
+exportCsvBtn.addEventListener("click", exportCsv);
+clearAllBtn.addEventListener("click", () => {
+  if(confirm("This will delete ALL saved sessions. Continue?")){
+    LOG = []; saveLog(); renderLog(); renderTotals(); toastMsg("All data cleared.");
+  }
+});
+
+/* ------------------------- Initial render ------------------------- */
+renderLog();
+renderTotals();
+setInterval(tick, 1000); // keep UI updating if user leaves it running
+</script>
+</body>
+</html>
