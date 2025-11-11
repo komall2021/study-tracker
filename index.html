@@ -293,6 +293,9 @@
                 <label class="chip" style="display:flex;align-items:center;gap:8px">
                   <input id="pomoSound" type="checkbox" style="accent-color:#7bd6ff" checked> 🔔 Sound
                 </label>
+                <label class="chip" style="display:flex;align-items:center;gap:8px">
+                  <input id="pomoNotify" type="checkbox" style="accent-color:#7bd6ff" checked> 🖥️ Notify
+                </label>
               </div>
               <div class="pomo-settings">
                 <div>
@@ -550,7 +553,7 @@ const Sound = {
     if (!this.enabledEl?.checked) return;
     this.ensure();
     const now = this.ctx.currentTime;
-    // different cadence: end of work = upbeat; end of break = softer down-chime
+    // end of work = upbeat; end of break = softer down-chime
     if (endedPhase === "work"){
       this.tone(660, 0.12, now, 0.22, "triangle");
       this.tone(880, 0.16, now+0.14, 0.22, "triangle");
@@ -558,6 +561,29 @@ const Sound = {
       this.tone(660, 0.12, now, 0.18, "sine");
       this.tone(523.25, 0.16, now+0.14, 0.18, "sine");
     }
+  }
+};
+
+/* ========================== DESKTOP NOTIFICATIONS ========================== */
+const Notifier = {
+  enabledEl: null,
+  async ensurePermission() {
+    if (!("Notification" in window)) return false;
+    if (Notification.permission === "granted") return true;
+    if (Notification.permission === "denied") return false;
+    try { const p = await Notification.requestPermission(); return p === "granted"; }
+    catch { return false; }
+  },
+  async maybeAsk() {
+    if (!this.enabledEl?.checked) return;
+    await this.ensurePermission();
+  },
+  send(title, body) {
+    if (!this.enabledEl?.checked) return;
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+    const n = new Notification(title, { body, silent: true });
+    n.onclick = () => { window.focus(); n.close(); };
   }
 };
 
@@ -576,6 +602,7 @@ const P = {
   interval: $("pomoInterval"),
   auto: $("pomoAuto"),
   soundToggle: $("pomoSound"),
+  notifyToggle: $("pomoNotify"),
   cycleDisp: $("pomoCycleDisp"),
   cycleInfo: $("pomoCycleInfo"),
   timerId: null,
@@ -593,15 +620,17 @@ function loadPomoSettings(){
     if(s.interval) P.interval.value = s.interval;
     if(typeof s.auto === "boolean") P.auto.checked = s.auto;
     if(typeof s.sound === "boolean") P.soundToggle.checked = s.sound;
+    if(typeof s.notify === "boolean") P.notifyToggle.checked = s.notify;
   }catch{}
 }
 function savePomoSettings(){
   localStorage.setItem(LS_POMO_KEY, JSON.stringify({
     work: +P.work.value, short:+P.short.value, long:+P.long.value,
-    interval:+P.interval.value, auto: P.auto.checked, sound: P.soundToggle.checked
+    interval:+P.interval.value, auto: P.auto.checked,
+    sound: P.soundToggle.checked, notify: P.notifyToggle.checked
   }));
 }
-["work","short","long","interval","auto","soundToggle"].forEach(k=>{
+["work","short","long","interval","auto","soundToggle","notifyToggle"].forEach(k=>{
   const el = P[k]; el.addEventListener(el.type==="checkbox"?"change":"input", savePomoSettings);
 });
 
@@ -627,7 +656,8 @@ function updatePomoUI(){
 
 function pomoStart(){
   if(P.state.running) return;
-  Sound.ensure(); // why: unlock audio due to user gesture
+  Sound.ensure();             // unlock audio
+  Notifier.maybeAsk();        // ask for notification permission on user gesture
   P.state.running = true;
   P.startBtn.disabled = true; P.pauseBtn.disabled = false;
   P.timerId = setInterval(pomoTick, 1000);
@@ -643,7 +673,7 @@ function pomoReset(){
   setPhase("work");
 }
 function pomoSkip(){
-  // why: no chime on manual skip to avoid noise
+  // no chime/notification on manual skip
   pomoPause(); nextPhase(true, P.state.phase);
 }
 
@@ -655,7 +685,17 @@ function nextPhase(fromSkip=false, endedPhase=null){
   }else{
     setPhase("work", true);
   }
-  if(!fromSkip){ Sound.play(endedPhase || "work"); } // play only on natural completion
+  if(!fromSkip){
+    Sound.play(endedPhase || "work"); // chime on natural completion
+    // desktop notification
+    const ended = endedPhase || "work";
+    const goingTo = P.state.phase; // "short" | "long" | "work"
+    const title = ended === "work" ? "Focus block complete 🎉" : "Break over ⏰";
+    const body  = ended === "work"
+      ? (goingTo === "long" ? "Long break time — recharge!" : "Short break time — stretch!")
+      : "Back to work — you got this!";
+    Notifier.send(title, body);
+  }
   toastMsg(fromSkip ? "Skipped to next phase." : `Time! ${P.state.phase.toUpperCase()} now.`);
   if(P.auto.checked){ pomoStart(); }
 }
@@ -672,6 +712,11 @@ function pomoTick(){
 function initPomo(){
   loadPomoSettings();
   Sound.enabledEl = P.soundToggle;
+  Notifier.enabledEl = P.notifyToggle;
+  // if user enables notifications later, immediately request permission
+  P.notifyToggle.addEventListener("change", () => {
+    if (P.notifyToggle.checked) Notifier.maybeAsk();
+  });
   setPhase("work");
   updatePomoUI();
   // bind
