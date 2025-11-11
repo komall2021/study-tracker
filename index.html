@@ -107,12 +107,9 @@
 
   .toast{ border-left:4px solid var(--good); background: rgba(0, 255, 160, 0.08); padding: 12px 14px; border-radius: 12px; display:none; }
 
-  /* === BIG ROUND SESSION CLOCK === */
+  /* BIG ROUND SESSION CLOCK */
   .big-timer{ display:grid; place-items:center; margin: 10px 0 6px; }
-  .clock{
-    --size: 240px; /* adjust here */
-    width: var(--size); height: var(--size);
-    position: relative; border-radius:50%;
+  .clock{ --size: 240px; width: var(--size); height: var(--size); position: relative; border-radius:50%;
     background: radial-gradient(140% 120% at 25% 20%, rgba(255,255,255,0.08), transparent 55%),
                 linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18));
     box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 18px 36px rgba(0,0,0,0.30);
@@ -121,13 +118,34 @@
   .clock .center{ position:absolute; inset:0; display:grid; place-items:center; text-align:center; }
   .clock .time{ font-weight:900; font-size: 34px; letter-spacing: 1px; }
   .clock .cap{ font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .clock.running{ box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 18px 36px rgba(0,0,0,0.30), 0 0 32px rgba(121, 209, 255, 0.25); } /* why: subtle feedback when active */
+  .clock.running{ box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 18px 36px rgba(0,0,0,0.30), 0 0 32px rgba(121, 209, 255, 0.25); }
   .clock .tickmarks{ opacity: .35 }
+
+  /* Pomodoro */
+  .pomo{ margin-top:14px; border-top:1px dashed var(--border); padding-top:14px }
+  .pomo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px }
+  .pomo-title{ font-weight:800 }
+  .pomo-wrap{ display:grid; grid-template-columns: 160px 1fr; gap:14px }
+  @media(max-width:600px){ .pomo-wrap{ grid-template-columns: 1fr } }
+  .pomo-clock{ width:160px; height:160px; position:relative }
+  .pomo-clock svg{ position:absolute; inset:0; transform: rotate(-90deg); }
+  .pomo-center{ position:absolute; inset:0; display:grid; place-items:center; text-align:center }
+  .pomo-time{ font-size:28px; font-weight:900 }
+  .pomo-phase{ font-size:12px; color:var(--muted) }
+  .pomo-controls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+  .pomo-controls button{ padding:8px 12px; border-radius:12px }
+  .pomo-settings{ display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; margin-top:8px }
+  .pomo-settings input{ padding:10px 10px }
+  .chip{ padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-weight:700 }
+  .phase-work  { border-color: rgba(123,214,255,.35) }
+  .phase-short { border-color: rgba(134,239,172,.35) }
+  .phase-long  { border-color: rgba(169,139,255,.35) }
 </style>
 </head>
 <body>
 
   <div class="site">
+    <!-- Header -->
     <div class="header">
       <div class="brand">
         <div class="logo">⏱</div>
@@ -178,19 +196,11 @@
         <div class="big-timer">
           <div class="clock" id="bigClock">
             <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-              <!-- ticks -->
-              <g class="tickmarks">
-                <!-- minor ticks -->
-                <g>
-                  <!-- why: lightweight tick generation -->
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8" />
-                </g>
-              </g>
-              <!-- progress ring (seconds) -->
+              <g class="tickmarks"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8" /></g>
               <circle id="bigTrack" cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4" />
-              <circle id="bigCircle" cx="50" cy="50" r="42" fill="none" stroke="url(#grad)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 999" stroke-dashoffset="0"/>
+              <circle id="bigCircle" cx="50" cy="50" r="42" fill="none" stroke="url(#gradSession)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 999" stroke-dashoffset="0"/>
               <defs>
-                <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <linearGradient id="gradSession" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%"  stop-color="#7bd6ff"/>
                   <stop offset="100%" stop-color="#a98bff"/>
                 </linearGradient>
@@ -205,7 +215,6 @@
 
         <div class="divider"></div>
 
-        <!-- keep today/streak -->
         <div class="meta">
           <div class="badge">📅 Today: <span id="todayTotal">0h 0m</span></div>
           <div class="badge">🔥 Streak: <span id="streak">0 days</span></div>
@@ -246,6 +255,68 @@
             <canvas id="chart7" height="200"></canvas>
           </div>
         </div>
+
+        <!-- Pomodoro (below the daily goal) -->
+        <div class="pomo">
+          <div class="pomo-head">
+            <div class="pomo-title">Pomodoro</div>
+            <div id="pomoCycleInfo" class="chip phase-work">Cycle 1 • Work</div>
+          </div>
+          <div class="pomo-wrap">
+            <!-- ring -->
+            <div class="pomo-clock">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+                <circle id="pomoRing" cx="50" cy="50" r="45" fill="none" stroke="url(#gradPomo)" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 999" stroke-dashoffset="0"/>
+                <defs>
+                  <linearGradient id="gradPomo" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%"  stop-color="#7bd6ff"/>
+                    <stop offset="100%" stop-color="#a98bff"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="pomo-center">
+                <div id="pomoTime" class="pomo-time">25:00</div>
+                <div id="pomoPhase" class="pomo-phase">Work</div>
+              </div>
+            </div>
+
+            <!-- controls + settings -->
+            <div>
+              <div class="pomo-controls">
+                <button id="pomoStart" class="btn-primary">Start</button>
+                <button id="pomoPause" class="btn-ghost" disabled>Pause</button>
+                <button id="pomoSkip" class="btn-warn">Skip</button>
+                <button id="pomoReset" class="btn-ghost">Reset</button>
+                <label class="chip" style="display:flex;align-items:center;gap:8px">
+                  <input id="pomoAuto" type="checkbox" style="accent-color:#7bd6ff"> Auto-start next
+                </label>
+              </div>
+              <div class="pomo-settings">
+                <div>
+                  <label>Work (min)</label>
+                  <input id="pomoWork" type="number" min="1" max="120" step="1" value="25">
+                </div>
+                <div>
+                  <label>Short (min)</label>
+                  <input id="pomoShort" type="number" min="1" max="60" step="1" value="5">
+                </div>
+                <div>
+                  <label>Long (min)</label>
+                  <input id="pomoLong" type="number" min="5" max="120" step="1" value="15">
+                </div>
+                <div>
+                  <label>Long every</label>
+                  <input id="pomoInterval" type="number" min="2" max="12" step="1" value="4">
+                </div>
+                <div>
+                  <label>Cycle</label>
+                  <input id="pomoCycleDisp" type="text" value="1" disabled>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
 
@@ -277,6 +348,7 @@ const LS_KEY = "study-tracker-log-v1";
 const LS_SUBJECTS = "study-tracker-subjects";
 const LS_GOAL = "study-tracker-goal";
 const LS_THEME = "study-tracker-theme";
+const LS_POMO = "study-tracker-pomodoro";
 
 let LOG = loadLog();
 let subjectsSet = new Set(JSON.parse(localStorage.getItem(LS_SUBJECTS) || "[]"));
@@ -285,6 +357,7 @@ let session = { running:false, start:null, timerId:null };
 /* ========================== UTIL ========================== */
 const pad = n => String(n).padStart(2, "0");
 const fmtTime = secs => `${pad(Math.floor(secs/3600))}:${pad(Math.floor((secs%3600)/60))}:${pad(secs%60)}`;
+const fmtMS = secs => `${pad(Math.floor(secs/60))}:${pad(secs%60)}`;
 const fmtHM = m => `${Math.floor(m/60)}h ${Math.round(m%60)}m`;
 const dateKey = d => d.toISOString().slice(0,10);
 const human = dt => new Date(dt).toLocaleString([], {hour12:false});
@@ -304,7 +377,7 @@ const themeBtn = $("themeBtn");
 const bigClock = $("bigClock");
 const bigClockTime = $("bigClockTime");
 const bigCircle = $("bigCircle");
-let CIRCUM = 0; // set after SVG ready
+let CIRCUM = 0;
 
 /* ========================== THEME ========================== */
 const savedTheme = localStorage.getItem(LS_THEME) || "dark";
@@ -412,9 +485,9 @@ function toastMsg(text){
   setTimeout(()=> toast.style.display = "none", 2300);
 }
 
-/* ========================== BIG CLOCK CORE ========================== */
+/* ========================== BIG CLOCK ========================== */
 function initBigClock(){
-  const r = 42; // SVG r
+  const r = 42;
   CIRCUM = 2 * Math.PI * r;
   bigCircle.setAttribute("stroke-dasharray", `${CIRCUM} ${CIRCUM}`);
   bigCircle.setAttribute("stroke-dashoffset", `${CIRCUM}`);
@@ -426,7 +499,7 @@ function updateBigClock(secs){
   bigCircle.setAttribute("stroke-dashoffset", `${offset}`);
 }
 
-/* ========================== TIMER ========================== */
+/* ========================== SESSION TIMER ========================== */
 function tick(){
   if(!session.running) return;
   const secs = Math.floor((Date.now() - session.start)/1000);
@@ -437,7 +510,7 @@ function start(){
   session.running = true; session.start = Date.now();
   session.timerId = setInterval(tick, 1000);
   updateBigClock(0);
-  bigClock.classList.add("running"); // why: visual feedback when active
+  bigClock.classList.add("running");
   startBtn.disabled = true; stopBtn.disabled = false;
 }
 function stop(){
@@ -576,10 +649,118 @@ function updateInsightsFromUser(){
   hoursInput.value = (sumLast7DaysMinutes()/60).toFixed(1);
 }
 
+/* ========================== POMODORO ========================== */
+const P = {
+  ring: $("pomoRing"),
+  time: $("pomoTime"),
+  phase: $("pomoPhase"),
+  startBtn: $("pomoStart"),
+  pauseBtn: $("pomoPause"),
+  skipBtn: $("pomoSkip"),
+  resetBtn: $("pomoReset"),
+  work: $("pomoWork"),
+  short: $("pomoShort"),
+  long: $("pomoLong"),
+  interval: $("pomoInterval"),
+  auto: $("pomoAuto"),
+  cycleDisp: $("pomoCycleDisp"),
+  cycleInfo: $("pomoCycleInfo"),
+  timerId: null,
+  state: { phase:"work", secs: 25*60, running:false, cycle:1, total:25*60 }
+};
+let POMO_CIRC = 2 * Math.PI * 45;
+
+function loadPomoSettings(){
+  try{
+    const s = JSON.parse(localStorage.getItem(LS_POMO) || "{}");
+    if(s.work) P.work.value = s.work;
+    if(s.short) P.short.value = s.short;
+    if(s.long) P.long.value = s.long;
+    if(s.interval) P.interval.value = s.interval;
+    if(typeof s.auto === "boolean") P.auto.checked = s.auto;
+  }catch{}
+}
+function savePomoSettings(){
+  localStorage.setItem(LS_POMO, JSON.stringify({
+    work: +P.work.value, short:+P.short.value, long:+P.long.value,
+    interval:+P.interval.value, auto: P.auto.checked
+  }));
+}
+["work","short","long","interval","auto"].forEach(k=>{
+  const el = P[k]; el.addEventListener(el.type==="checkbox"?"change":"input", savePomoSettings);
+});
+
+function setPhase(phase, incCycle=false){
+  const mins = phase==="work" ? +P.work.value : (phase==="short" ? +P.short.value : +P.long.value);
+  P.state.phase = phase;
+  P.state.total = mins*60;
+  P.state.secs = mins*60;
+  if(incCycle) P.state.cycle++;
+  P.cycleDisp.value = P.state.cycle;
+  P.cycleInfo.textContent = `Cycle ${P.state.cycle} • ${phase[0].toUpperCase()+phase.slice(1)}`;
+  P.cycleInfo.className = `chip phase-${phase}`;
+  P.phase.textContent = phase[0].toUpperCase()+phase.slice(1);
+  updatePomoUI();
+}
+
+function updatePomoUI(){
+  P.time.textContent = fmtMS(P.state.secs);
+  const offset = POMO_CIRC - (POMO_CIRC * (P.state.total - P.state.secs) / P.state.total);
+  P.ring.setAttribute("stroke-dasharray", `${POMO_CIRC} ${POMO_CIRC}`);
+  P.ring.setAttribute("stroke-dashoffset", `${offset}`);
+}
+
+function pomoStart(){
+  if(P.state.running) return;
+  P.state.running = true;
+  P.startBtn.disabled = true; P.pauseBtn.disabled = false;
+  P.timerId = setInterval(pomoTick, 1000);
+}
+function pomoPause(){
+  if(!P.state.running) return;
+  P.state.running = false; P.startBtn.disabled = false; P.pauseBtn.disabled = true;
+  clearInterval(P.timerId);
+}
+function pomoReset(){
+  pomoPause();
+  P.state.cycle = 1;
+  setPhase("work");
+}
+function pomoSkip(){
+  pomoPause(); nextPhase(true);
+}
+
+function nextPhase(fromSkip=false){
+  const n = +P.interval.value;
+  if(P.state.phase === "work"){
+    const goLong = (P.state.cycle % n === 0);
+    setPhase(goLong ? "long" : "short");
+  }else{
+    setPhase("work", true);
+  }
+  toastMsg(fromSkip ? "Skipped to next phase." : `Time! ${P.state.phase.toUpperCase()} now.`);
+  if(P.auto.checked){ pomoStart(); }
+}
+
+function pomoTick(){
+  if(P.state.secs > 0){ P.state.secs--; updatePomoUI(); }
+  if(P.state.secs <= 0){ pomoPause(); nextPhase(false); }
+}
+
+function initPomo(){
+  loadPomoSettings();
+  setPhase("work");
+  updatePomoUI();
+  P.startBtn.addEventListener("click", pomoStart);
+  P.pauseBtn.addEventListener("click", pomoPause);
+  P.resetBtn.addEventListener("click", pomoReset);
+  P.skipBtn.addEventListener("click", pomoSkip);
+}
+
 /* ========================== BOOT ========================== */
 renderLog(); renderTotals();
-initBigClock();                 // <-- init big clock once
-setInterval(tick, 1000);        // shared tick
+initBigClock();
+setInterval(tick, 1000);
 loadUCI();
 
 startBtn.addEventListener("click", start);
@@ -589,6 +770,8 @@ clearAllBtn.addEventListener("click", ()=>{
   if(confirm("Delete ALL saved sessions?")){ LOG=[]; saveLog(); renderLog(); renderTotals(); toastMsg("All data cleared."); }
 });
 exportCsvBtn.addEventListener("click", exportCsv);
+
+initPomo();
 </script>
 </body>
 </html>
