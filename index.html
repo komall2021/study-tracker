@@ -7,7 +7,6 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
   :root {
@@ -320,26 +319,6 @@
       </section>
     </div>
 
-    <!-- INSIGHTS -->
-    <section class="card" style="margin-top:18px">
-      <h3 class="section-title">Insights (UCI Student Performance)</h3>
-      <div class="row">
-        <div>
-          <canvas id="chartStudytime" height="200"></canvas>
-        </div>
-        <div>
-          <div id="insightsBox">Loading dataset…</div>
-          <div style="margin-top:12px">
-            <label>Estimate grade from weekly study hours</label>
-            <div class="controls">
-              <input id="hoursInput" type="number" min="0" max="40" step="0.5" value="6" style="max-width:130px">
-              <button id="predictBtn" class="btn-primary">Predict</button>
-            </div>
-            <div id="predictOut" style="margin-top:8px;font-weight:800"></div>
-          </div>
-        </div>
-      </div>
-    </section>
   </div>
 
 <script>
@@ -476,8 +455,6 @@ function renderTotals(){
     data.push(((byDay[k]||0)/60).toFixed(2));
   }
   chart.data.labels = labels; chart.data.datasets[0].data = data; chart.update();
-
-  updateInsightsFromUser();
 }
 
 function toastMsg(text){
@@ -560,95 +537,6 @@ function exportCsv(){
   URL.revokeObjectURL(a.href);
 }
 
-/* ========================== UCI DATA ========================== */
-const chartStudyEl = document.getElementById("chartStudytime");
-const insightsBox   = document.getElementById("insightsBox");
-const hoursInput    = document.getElementById("hoursInput");
-const predictBtn    = document.getElementById("predictBtn");
-const predictOut    = document.getElementById("predictOut");
-
-let chartStudytime = null;
-window._uci = null;
-
-function sumLast7DaysMinutes(){
-  const byDay = totalsByDay();
-  const now = new Date(); now.setHours(0,0,0,0);
-  let total = 0;
-  for(let i=0;i<7;i++){
-    const d = new Date(now); d.setDate(now.getDate()-i);
-    total += byDay[dateKey(d)] || 0;
-  }
-  return total;
-}
-
-function loadUCI(){
-  fetch("data/student-mat.csv")
-    .then(r => r.text())
-    .then(csv => {
-      const parsed = Papa.parse(csv, { header: true, dynamicTyping: true });
-      const rows = parsed.data.filter(r => Number.isFinite(r.studytime) && Number.isFinite(r.G3));
-
-      const labels = ["<2h", "2–5h", "5–10h", ">10h"];
-      const counts = [0,0,0,0];
-      const g3bins = [[],[],[],[]];
-      const absPairs = [];
-
-      for(const r of rows){
-        const idx = (r.studytime|0) - 1;
-        if(idx>=0 && idx<4){ counts[idx]++; g3bins[idx].push(+r.G3); }
-        if(Number.isFinite(r.absences) && Number.isFinite(r.G3)){ absPairs.push([+r.absences, +r.G3]); }
-      }
-      const total = counts.reduce((a,b)=>a+b,0);
-      const pct   = counts.map(c => +(100*c/total).toFixed(1));
-      const avgG3 = g3bins.map(a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0);
-
-      const meanX = absPairs.reduce((s,[x])=>s+x,0) / absPairs.length;
-      const meanY = absPairs.reduce((s,[,y])=>s+y,0) / absPairs.length;
-      let num=0, den=0;
-      for(const [x,y] of absPairs){ num += (x-meanX)*(y-meanY); den += (x-meanX)*(x-meanX); }
-      const slopeAbs = den ? num/den : 0;
-
-      window._uci = { labels, pct, avgG3, meanAbs: meanX, slopeAbs, sampleSize: total };
-
-      chartStudytime = new Chart(chartStudyEl, {
-        type: "bar",
-        data: { labels, datasets: [{ label: "% of students", data: pct }] },
-        options: { responsive:true, scales:{ y:{ beginAtZero:true } }, plugins:{ legend:{ display:false } } }
-      });
-
-      insightsBox.innerHTML = `
-        <div style="line-height:1.6">
-          • Dataset size: <b>${total}</b> students<br>
-          • Avg final grade (G3) by study time:
-          ${labels.map((l,i)=>`${l}: <b>${avgG3[i].toFixed(1)}</b>`).join("&nbsp;&nbsp;")}
-          <br>• Each extra absence ≈ <b>${(-slopeAbs).toFixed(2)}</b> drop in grade (avg).
-        </div>
-      `;
-
-      hoursInput.value = (sumLast7DaysMinutes()/60).toFixed(1);
-    })
-    .catch(err => {
-      insightsBox.innerHTML = `<span style="color:#ffb4b4">Failed to load dataset.</span>`;
-      console.error(err);
-    });
-}
-
-predictBtn?.addEventListener("click", () => {
-  if(!window._uci){ predictOut.textContent = "Dataset not loaded yet."; return; }
-  const h = Number(hoursInput.value) || 0;
-  const edges = [0,2,5,10,1e9];
-  let level = 0;
-  for(let i=0;i<4;i++){ if(h >= edges[i] && h < edges[i+1]){ level=i; break; } }
-  const base = window._uci.avgG3[level] || 10;
-  const pred = Math.max(0, Math.min(20, base));
-  predictOut.textContent = `Estimated final grade (G3) ≈ ${pred.toFixed(1)} / 20 based on ~${h}h/week`;
-});
-
-function updateInsightsFromUser(){
-  if(!window._uci) return;
-  hoursInput.value = (sumLast7DaysMinutes()/60).toFixed(1);
-}
-
 /* ========================== POMODORO ========================== */
 const P = {
   ring: $("pomoRing"),
@@ -670,9 +558,10 @@ const P = {
 };
 let POMO_CIRC = 2 * Math.PI * 45;
 
+const LS_POMO_KEY = "study-tracker-pomodoro";
 function loadPomoSettings(){
   try{
-    const s = JSON.parse(localStorage.getItem(LS_POMO) || "{}");
+    const s = JSON.parse(localStorage.getItem(LS_POMO_KEY) || "{}");
     if(s.work) P.work.value = s.work;
     if(s.short) P.short.value = s.short;
     if(s.long) P.long.value = s.long;
@@ -681,7 +570,7 @@ function loadPomoSettings(){
   }catch{}
 }
 function savePomoSettings(){
-  localStorage.setItem(LS_POMO, JSON.stringify({
+  localStorage.setItem(LS_POMO_KEY, JSON.stringify({
     work: +P.work.value, short:+P.short.value, long:+P.long.value,
     interval:+P.interval.value, auto: P.auto.checked
   }));
@@ -761,7 +650,6 @@ function initPomo(){
 renderLog(); renderTotals();
 initBigClock();
 setInterval(tick, 1000);
-loadUCI();
 
 startBtn.addEventListener("click", start);
 stopBtn.addEventListener("click", stop);
