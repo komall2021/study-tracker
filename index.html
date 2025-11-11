@@ -290,6 +290,9 @@
                 <label class="chip" style="display:flex;align-items:center;gap:8px">
                   <input id="pomoAuto" type="checkbox" style="accent-color:#7bd6ff"> Auto-start next
                 </label>
+                <label class="chip" style="display:flex;align-items:center;gap:8px">
+                  <input id="pomoSound" type="checkbox" style="accent-color:#7bd6ff" checked> 🔔 Sound
+                </label>
               </div>
               <div class="pomo-settings">
                 <div>
@@ -327,7 +330,6 @@ const LS_KEY = "study-tracker-log-v1";
 const LS_SUBJECTS = "study-tracker-subjects";
 const LS_GOAL = "study-tracker-goal";
 const LS_THEME = "study-tracker-theme";
-const LS_POMO = "study-tracker-pomodoro";
 
 let LOG = loadLog();
 let subjectsSet = new Set(JSON.parse(localStorage.getItem(LS_SUBJECTS) || "[]"));
@@ -525,17 +527,39 @@ function resetToday(){
   toastMsg("Cleared today’s entries.");
 }
 
-/* ========================== EXPORT & CLEAR ========================== */
-function exportCsv(){
-  if(LOG.length===0){ toastMsg("No data to export."); return; }
-  const header = ["start","end","minutes","subject","note"];
-  const rows = LOG.map(s => [new Date(s.start).toISOString(), new Date(s.end).toISOString(), s.minutes, (s.subject||""), (s.note||"")]);
-  const csv = [header.join(","), ...rows.map(r => r.map(x => String(x).replaceAll('"','""')).map(x => /,|"/.test(x)?`"${x}"`:x).join(","))].join("\n");
-  const blob = new Blob([csv], {type:"text/csv"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = "study_log.csv"; a.click();
-  URL.revokeObjectURL(a.href);
-}
+/* ========================== SOUND (Pomodoro) ========================== */
+// why: synth chime, no external files; unlocked by first user click
+const Sound = {
+  enabledEl: null,
+  ctx: null,
+  ensure() {
+    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.ctx.state === "suspended") this.ctx.resume();
+  },
+  tone(freq, dur, t0, vol=0.2, type="sine"){
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    o.connect(g); g.connect(this.ctx.destination);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.start(t0); o.stop(t0+dur);
+  },
+  play(endedPhase){
+    if (!this.enabledEl?.checked) return;
+    this.ensure();
+    const now = this.ctx.currentTime;
+    // different cadence: end of work = upbeat; end of break = softer down-chime
+    if (endedPhase === "work"){
+      this.tone(660, 0.12, now, 0.22, "triangle");
+      this.tone(880, 0.16, now+0.14, 0.22, "triangle");
+    } else {
+      this.tone(660, 0.12, now, 0.18, "sine");
+      this.tone(523.25, 0.16, now+0.14, 0.18, "sine");
+    }
+  }
+};
 
 /* ========================== POMODORO ========================== */
 const P = {
@@ -551,6 +575,7 @@ const P = {
   long: $("pomoLong"),
   interval: $("pomoInterval"),
   auto: $("pomoAuto"),
+  soundToggle: $("pomoSound"),
   cycleDisp: $("pomoCycleDisp"),
   cycleInfo: $("pomoCycleInfo"),
   timerId: null,
@@ -567,15 +592,16 @@ function loadPomoSettings(){
     if(s.long) P.long.value = s.long;
     if(s.interval) P.interval.value = s.interval;
     if(typeof s.auto === "boolean") P.auto.checked = s.auto;
+    if(typeof s.sound === "boolean") P.soundToggle.checked = s.sound;
   }catch{}
 }
 function savePomoSettings(){
   localStorage.setItem(LS_POMO_KEY, JSON.stringify({
     work: +P.work.value, short:+P.short.value, long:+P.long.value,
-    interval:+P.interval.value, auto: P.auto.checked
+    interval:+P.interval.value, auto: P.auto.checked, sound: P.soundToggle.checked
   }));
 }
-["work","short","long","interval","auto"].forEach(k=>{
+["work","short","long","interval","auto","soundToggle"].forEach(k=>{
   const el = P[k]; el.addEventListener(el.type==="checkbox"?"change":"input", savePomoSettings);
 });
 
@@ -601,6 +627,7 @@ function updatePomoUI(){
 
 function pomoStart(){
   if(P.state.running) return;
+  Sound.ensure(); // why: unlock audio due to user gesture
   P.state.running = true;
   P.startBtn.disabled = true; P.pauseBtn.disabled = false;
   P.timerId = setInterval(pomoTick, 1000);
@@ -616,10 +643,11 @@ function pomoReset(){
   setPhase("work");
 }
 function pomoSkip(){
-  pomoPause(); nextPhase(true);
+  // why: no chime on manual skip to avoid noise
+  pomoPause(); nextPhase(true, P.state.phase);
 }
 
-function nextPhase(fromSkip=false){
+function nextPhase(fromSkip=false, endedPhase=null){
   const n = +P.interval.value;
   if(P.state.phase === "work"){
     const goLong = (P.state.cycle % n === 0);
@@ -627,19 +655,26 @@ function nextPhase(fromSkip=false){
   }else{
     setPhase("work", true);
   }
+  if(!fromSkip){ Sound.play(endedPhase || "work"); } // play only on natural completion
   toastMsg(fromSkip ? "Skipped to next phase." : `Time! ${P.state.phase.toUpperCase()} now.`);
   if(P.auto.checked){ pomoStart(); }
 }
 
 function pomoTick(){
   if(P.state.secs > 0){ P.state.secs--; updatePomoUI(); }
-  if(P.state.secs <= 0){ pomoPause(); nextPhase(false); }
+  if(P.state.secs <= 0){
+    const ended = P.state.phase; // capture before it changes
+    pomoPause();
+    nextPhase(false, ended);
+  }
 }
 
 function initPomo(){
   loadPomoSettings();
+  Sound.enabledEl = P.soundToggle;
   setPhase("work");
   updatePomoUI();
+  // bind
   P.startBtn.addEventListener("click", pomoStart);
   P.pauseBtn.addEventListener("click", pomoPause);
   P.resetBtn.addEventListener("click", pomoReset);
