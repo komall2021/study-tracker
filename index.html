@@ -219,29 +219,48 @@
       </section>
     </div>
 
-    <!-- INSIGHTS (UCI dataset) -->
-    <section class="card" style="margin-top:18px">
-      <h3 class="section-title">Insights (UCI Student Performance)</h3>
-      <div class="row">
-        <div>
-          <canvas id="chartStudytime" height="200"></canvas>
-        </div>
-        <div>
-          <div id="insightsBox">Loading dataset…</div>
-          <div style="margin-top:12px">
-            <label>Estimate grade from weekly study hours</label>
-            <div class="controls">
-              <input id="hoursInput" type="number" min="0" max="40" step="0.5" value="6" style="max-width:130px">
-              <button id="predictBtn" class="btn-primary">Predict</button>
-            </div>
-            <div id="predictOut" style="margin-top:8px;font-weight:800"></div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- INSIGHTS (UCI dataset) - SIMPLE -->
+<section class="card" style="margin-top:18px">
+  <h3 class="section-title">Study Insights (from 395 students)</h3>
+
+  <div class="kpi">
+    <div class="tile">
+      <div class="k">Dataset size</div>
+      <div class="v" id="kpiCount">—</div>
+    </div>
+    <div class="tile">
+      <div class="k">Most common study band</div>
+      <div class="v" id="kpiTopBand">—</div>
+    </div>
+    <div class="tile">
+      <div class="k">Absence effect</div>
+      <div class="v" id="kpiAbs">—/absence</div>
+    </div>
   </div>
 
-<script>
+  <div class="row" style="margin-top:12px">
+    <div>
+      <canvas id="chartStudytime" height="200"></canvas>
+      <div class="simple-note">Share of students by weekly study time.</div>
+    </div>
+
+    <div>
+      <label><b>Your last 7 days</b> → hours/week</label>
+      <div class="controls" style="margin-top:6px">
+        <input id="hoursInput" class="range" type="range" min="0" max="30" step="0.5" value="0">
+        <input id="hoursBox" type="number" min="0" max="30" step="0.5" value="0" style="width:90px">
+      </div>
+
+      <div class="tile" style="margin-top:10px">
+        <div class="k">Expected grade band (G3 / 20)</div>
+        <div class="v" id="predictOut">—</div>
+      </div>
+
+      <div class="simple-note" id="bandNote"></div>
+    </div>
+  </div>
+</section>
+
 /* ========================== STATE ========================== */
 const LS_KEY = "study-tracker-log-v1";
 const LS_SUBJECTS = "study-tracker-subjects";
