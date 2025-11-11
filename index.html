@@ -72,10 +72,9 @@
     --ring-bg: rgba(255,255,255,0.12);
     --shadow: 0 10px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05);
 
-    /* Use a vivid rainbow for primary gradiented UI bits */
-    --primary: #ef4444;   /* red */
-    --primary-2: #8b5cf6; /* violet (end of gradient) */
-    --accent: #ff7ab6;    /* accent for conic ring */
+    --primary: #ef4444;
+    --primary-2: #8b5cf6;
+    --accent: #ff7ab6;
 
     --logo-grad: linear-gradient(90deg,
       #ef4444, #f97316, #f59e0b, #22c55e, #3b82f6, #8b5cf6);
@@ -92,7 +91,6 @@
     letter-spacing: 0.2px;
   }
 
-  /* Pride theme extras: subtle rainbow outline on cards & rainbow underline on badges/buttons */
   :root[data-theme="pride"] .card{
     border-image: linear-gradient(90deg,#ef4444,#f97316,#f59e0b,#22c55e,#3b82f6,#8b5cf6) 1;
   }
@@ -131,7 +129,7 @@
   .btn-ghost { background: rgba(255,255,255,0.03) }
   .toggle{ border-radius: 999px; padding: 8px 12px; font-weight:700; background: rgba(255,255,255,0.06); }
 
-  .meta{ display:flex; gap:10px; flex-wrap:wrap }
+  .meta{ display:flex; gap:10px; flex-wrap:wrap; align-items:center }
   .badge{ display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.04); border:1px solid var(--border); border-radius: 999px; padding: 8px 12px; font-weight: 700; color: var(--text); }
 
   .ring-wrap{ display:grid; place-items:center }
@@ -183,6 +181,15 @@
   .phase-work  { border-color: rgba(123,214,255,.35) }
   .phase-short { border-color: rgba(134,239,172,.35) }
   .phase-long  { border-color: rgba(169,139,255,.35) }
+  
+  /* Finish Day button style */
+  .btn-finish{
+    border:1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    padding:8px 12px;
+    border-radius:999px;
+    font-weight:800;
+  }
 </style>
 </head>
 <body>
@@ -261,6 +268,8 @@
         <div class="meta">
           <div class="badge">📅 Today: <span id="todayTotal">0h 0m</span></div>
           <div class="badge">🔥 Streak: <span id="streak">0 days</span></div>
+          <!-- NEW: Finish Session toggle -->
+          <button id="finishDayBtn" class="btn-finish">FINISH SESSION</button>
         </div>
 
         <p id="toast" class="toast" style="margin-top:12px"></p>
@@ -377,6 +386,8 @@ const LS_KEY = "study-tracker-log-v1";
 const LS_SUBJECTS = "study-tracker-subjects";
 const LS_GOAL = "study-tracker-goal";
 const LS_THEME = "study-tracker-theme";
+/* store last finished date string (YYYY-MM-DD) */
+const LS_DAY_DONE = "study-tracker-day-finished";
 
 let LOG = loadLog();
 let subjectsSet = new Set(JSON.parse(localStorage.getItem(LS_SUBJECTS) || "[]"));
@@ -400,6 +411,7 @@ const ring = $("ring"), ringValue = $("ringValue"), ringCap = $("ringCap");
 const toast = $("toast"), clearAllBtn = $("clearAll"), exportCsvBtn = $("exportCsv");
 const subjectList = $("subject-list");
 const themeBtn = $("themeBtn");
+const finishDayBtn = $("finishDayBtn");
 
 /* BIG CLOCK DOM */
 const bigClock = $("bigClock");
@@ -411,8 +423,6 @@ let CIRCUM = 0;
 const savedTheme = localStorage.getItem(LS_THEME) || "dark";
 document.documentElement.setAttribute("data-theme", savedTheme);
 themeBtn.textContent = savedTheme === "light" ? "🌞 Light" : (savedTheme === "pride" ? "🏳️‍🌈 Pride" : "🌙 Dark");
-
-/* Cycle Dark → Light → Pride */
 const THEMES = ["dark","light","pride"];
 themeBtn.addEventListener("click", () => {
   const cur = document.documentElement.getAttribute("data-theme") || "dark";
@@ -494,7 +504,6 @@ function renderTotals(){
   const goalH = Math.max(0, Number(goalEl.value) || 0);
   const pct = goalH > 0 ? Math.min(100, Math.round((mins/60)/goalH*100)) : 0;
 
-  /* use theme accent color in ring fill */
   const deg = pct*3.6;
   ring.style.background = `conic-gradient(var(--accent) 0deg ${deg}deg, var(--ring-bg) ${deg}deg 360deg)`;
   ringValue.textContent = `${pct}%`;
@@ -502,15 +511,7 @@ function renderTotals(){
 
   const s = computeStreak();
   streakEl.textContent = `${s} ${s===1?"day":"days"}`;
-
-  const labels = [], data = [];
-  for(let i=6;i>=0;i--){
-    const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
-    const k = dateKey(d);
-    labels.push(d.toLocaleDateString([], {month:"short", day:"numeric"}));
-    data.push(((byDay[k]||0)/60).toFixed(2));
-  }
-  chart.data.labels = labels; chart.data.datasets[0].data = data; chart.update();
+  updateFinishUI(); // keep Finish UI in sync
 }
 
 function toastMsg(text){
@@ -532,6 +533,37 @@ function updateBigClock(secs){
   bigCircle.setAttribute("stroke-dashoffset", `${offset}`);
 }
 
+/* ========================== FINISH DAY ========================== */
+function getTodayKey(){ const d = new Date(); d.setHours(0,0,0,0); return dateKey(d); }
+function isDayFinished(){
+  const k = localStorage.getItem(LS_DAY_DONE);
+  return k === getTodayKey();
+}
+function clearOldFinishFlag(){
+  const k = localStorage.getItem(LS_DAY_DONE);
+  if (k && k !== getTodayKey()) localStorage.removeItem(LS_DAY_DONE);
+}
+function updateFinishUI(){
+  const finished = isDayFinished();
+  finishDayBtn.textContent = finished ? "RESUME TODAY" : "FINISH SESSION";
+  finishDayBtn.classList.toggle("btn-warn", !finished);
+  startBtn.disabled = finished || session.running; // block new starts if finished
+}
+finishDayBtn.addEventListener("click", () => {
+  if (!isDayFinished()){
+    // Finish the entire day
+    if (session.running) { stop(); } // logs the running block
+    localStorage.setItem(LS_DAY_DONE, getTodayKey());
+    updateFinishUI();
+    toastMsg("Day finished. Amazing work! ✅");
+  } else {
+    // Resume today
+    localStorage.removeItem(LS_DAY_DONE);
+    updateFinishUI();
+    toastMsg("You can log more sessions today.");
+  }
+});
+
 /* ========================== SESSION TIMER ========================== */
 function tick(){
   if(!session.running) return;
@@ -539,6 +571,10 @@ function tick(){
   updateBigClock(secs);
 }
 function start(){
+  if(isDayFinished()){
+    toastMsg("You've finished today. Click “Resume today” to reopen.");
+    return;
+  }
   if(session.running) return;
   session.running = true; session.start = Date.now();
   session.timerId = setInterval(tick, 1000);
@@ -560,7 +596,8 @@ function stop(){
   if(entry.subject){ subjectsSet.add(entry.subject);
     localStorage.setItem(LS_SUBJECTS, JSON.stringify([...subjectsSet])); refreshSubjectList(); }
 
-  startBtn.disabled = false; stopBtn.disabled = true; updateBigClock(0);
+  startBtn.disabled = isDayFinished() ? true : false; // respect day lock
+  stopBtn.disabled = true; updateBigClock(0);
   renderLog(); renderTotals();
 
   const msgs = [
@@ -705,8 +742,8 @@ function updatePomoUI(){
 
 function pomoStart(){
   if(P.state.running) return;
-  Sound.ensure();             // unlock audio
-  Notifier.maybeAsk();        // ask for notification permission on user gesture
+  Sound.ensure();
+  Notifier.maybeAsk();
   P.state.running = true;
   P.startBtn.disabled = true; P.pauseBtn.disabled = false;
   P.timerId = setInterval(pomoTick, 1000);
@@ -722,7 +759,6 @@ function pomoReset(){
   setPhase("work");
 }
 function pomoSkip(){
-  // no chime/notification on manual skip
   pomoPause(); nextPhase(true, P.state.phase);
 }
 
@@ -735,7 +771,7 @@ function nextPhase(fromSkip=false, endedPhase=null){
     setPhase("work", true);
   }
   if(!fromSkip){
-    Sound.play(endedPhase || "work"); // chime on natural completion
+    Sound.play(endedPhase || "work");
     const ended = endedPhase || "work";
     const goingTo = P.state.phase;
     const title = ended === "work" ? "Focus block complete 🎉" : "Break over ⏰";
@@ -776,6 +812,10 @@ function initPomo(){
 renderLog(); renderTotals();
 initBigClock();
 setInterval(tick, 1000);
+
+/* Clear yesterday's finish flag automatically */
+clearOldFinishFlag();
+updateFinishUI();
 
 startBtn.addEventListener("click", start);
 stopBtn.addEventListener("click", stop);
