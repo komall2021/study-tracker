@@ -168,7 +168,6 @@
   .pomo-controls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
   .pomo-controls button{ padding:8px 12px; border-radius:12px }
   .pomo-settings{ display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; margin-top:8px }
-  .pomo-settings input{ padding:10px 10px }
   .chip{ padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-weight:700 }
   .phase-work  { border-color: rgba(123,214,255,.35) }
   .phase-short { border-color: rgba(134,239,172,.35) }
@@ -365,6 +364,7 @@ const LS_KEY = "study-tracker-log-v1";
 const LS_SUBJECTS = "study-tracker-subjects";
 const LS_GOAL = "study-tracker-goal";
 const LS_THEME = "study-tracker-theme";
+/* last finished local date string (YYYY-MM-DD) */
 const LS_DAY_DONE = "study-tracker-day-finished";
 
 let LOG = loadLog();
@@ -376,7 +376,8 @@ const pad = n => String(n).padStart(2, "0");
 const fmtTime = secs => `${pad(Math.floor(secs/3600))}:${pad(Math.floor((secs%3600)/60))}:${pad(secs%60)}`;
 const fmtMS = secs => `${pad(Math.floor(secs/60))}:${pad(secs%60)}`;
 const fmtHM = m => `${Math.floor(m/60)}h ${Math.round(m%60)}m`;
-const dateKey = d => d.toISOString().slice(0,10);
+/* LOCAL date key (fixes UTC drift) */
+const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const human = dt => new Date(dt).toLocaleString([], {hour12:false});
 const saveLog = () => localStorage.setItem(LS_KEY, JSON.stringify(LOG));
 const $ = id => document.getElementById(id);
@@ -409,7 +410,7 @@ themeBtn.addEventListener("click", () => {
   document.documentElement.setAttribute("data-theme", next);
   localStorage.setItem(LS_THEME, next);
   themeBtn.textContent = next === "light" ? "🌞 Light" : (next === "pride" ? "🏳️‍🌈 Pride" : "🌙 Dark");
-  renderChart7(); // keep chart colors in sync
+  renderChart7();
 });
 
 /* ========================== LOADERS ========================== */
@@ -441,38 +442,30 @@ const chart = new Chart($("chart7"), {
   }
 });
 
-/* ---- NEW: compute + render last 7 days ---- */
+/* ---- last 7 days ---- */
 function lastNDaysKeys(n){
   const keys = [];
-  const d = new Date();
-  d.setHours(0,0,0,0);
+  const d = new Date(); d.setHours(0,0,0,0);
   for(let i=n-1;i>=0;i--){
-    const t = new Date(d);
-    t.setDate(d.getDate()-i);
+    const t = new Date(d); t.setDate(d.getDate()-i);
     keys.push(dateKey(t));
   }
   return keys;
 }
 function weekdayShort(key){
   const [y,m,dd] = key.split("-").map(Number);
-  const d = new Date(y, m-1, dd);
-  return d.toLocaleDateString([], { weekday: "short" });
+  return new Date(y, m-1, dd).toLocaleDateString([], { weekday: "short" });
 }
 function renderChart7(){
   const byDay = totalsByDay();
   const keys = lastNDaysKeys(7);
-  const labels = keys.map(k => weekdayShort(k));
-  const hours = keys.map(k => (byDay[k] || 0) / 60); // minutes -> hours
-
+  chart.data.labels = keys.map(weekdayShort);
+  chart.data.datasets[0].data = keys.map(k => (byDay[k] || 0) / 60);
   const muted = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
-
-  chart.data.labels = labels;
-  chart.data.datasets[0].data = hours;
   chart.options.scales.x.ticks.color = muted;
   chart.options.scales.y.ticks.color = muted;
   chart.update();
 }
-/* ----------------------------------------- */
 
 /* ========================== RENDER ========================== */
 function renderLog(){
@@ -525,7 +518,7 @@ function renderTotals(){
   streakEl.textContent = `${s} ${s===1?"day":"days"}`;
   updateFinishUI();
 
-  renderChart7(); // keep bars updated
+  renderChart7();
 }
 
 function toastMsg(text){
@@ -549,10 +542,7 @@ function updateBigClock(secs){
 
 /* ========================== FINISH DAY ========================== */
 function getTodayKey(){ const d = new Date(); d.setHours(0,0,0,0); return dateKey(d); }
-function isDayFinished(){
-  const k = localStorage.getItem(LS_DAY_DONE);
-  return k === getTodayKey();
-}
+function isDayFinished(){ return localStorage.getItem(LS_DAY_DONE) === getTodayKey(); }
 function clearOldFinishFlag(){
   const k = localStorage.getItem(LS_DAY_DONE);
   if (k && k !== getTodayKey()) localStorage.removeItem(LS_DAY_DONE);
@@ -565,14 +555,13 @@ function updateFinishUI(){
 }
 finishDayBtn.addEventListener("click", () => {
   if (!isDayFinished()){
-    if (session.running) { stop(); }
+    if (session.running) { stop(); }     // ensures last block is logged
     localStorage.setItem(LS_DAY_DONE, getTodayKey());
     updateFinishUI();
+    renderTotals();                       // <- immediate refresh
     toastMsg("Day finished. Amazing work! ✅");
   } else {
-    localStorage.removeItem(LS_DAY_DONE);
-    updateFinishUI();
-    toastMsg("You can log more sessions today.");
+    localStorage.removeItem(LS_DAY_DONE());
   }
 });
 
@@ -608,7 +597,7 @@ function stop(){
   if(entry.subject){ subjectsSet.add(entry.subject);
     localStorage.setItem(LS_SUBJECTS, JSON.stringify([...subjectsSet])); refreshSubjectList(); }
 
-  startBtn.disabled = isDayFinished() ? true : false;
+  startBtn.disabled = isDayFinished();
   stopBtn.disabled = true; updateBigClock(0);
   renderLog(); renderTotals();
 
@@ -821,7 +810,7 @@ function initPomo(){
 }
 
 /* ========================== BOOT ========================== */
-renderLog(); renderTotals(); // renderTotals() calls renderChart7()
+renderLog(); renderTotals();
 initBigClock();
 setInterval(tick, 1000);
 clearOldFinishFlag();
@@ -834,15 +823,14 @@ clearAllBtn.addEventListener("click", ()=>{
   if(confirm("Delete ALL saved sessions?")){ LOG=[]; saveLog(); renderLog(); renderTotals(); toastMsg("All data cleared."); }
 });
 exportCsvBtn.addEventListener("click", exportCsv);
-
 initPomo();
 
-/* ======= CSV EXPORT (kept from your version) ======= */
+/* ======= CSV EXPORT ======= */
 function exportCsv(){
   if (!LOG.length){ toastMsg("No data to export."); return; }
   const rows = [["start","end","minutes","subject","note"]];
   for(const s of LOG){
-    rows.push([s.start.toISOString(), s.end.toISOString(), s.minutes, s.subject||"", s.note||""]);
+    rows.push([new Date(s.start).toISOString(), new Date(s.end).toISOString(), s.minutes, s.subject||"", s.note||""]);
   }
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
