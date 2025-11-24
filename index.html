@@ -1,13 +1,12 @@
+<!-- /index.html (Enhanced Study Tracker) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Study Tracker • Focus & Flow</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
 <style>
   :root {
     --bg: #0b0f17;
@@ -19,21 +18,12 @@
     --border: rgba(255, 255, 255, 0.06);
     --text: #f5f7fb;
     --muted: #9db1c8;
-
-    --primary: #7bd6ff;
-    --primary-2: #a98bff;
-
-    --good: #86efac;
-    --warn: #fbbf24;
-    --danger: #fb7185;
-
-    --ring-bg: rgba(255,255,255,0.06);
-    --accent: #7bd6ff;
-
+    --primary: #7bd6ff; --primary-2: #a98bff;
+    --good: #86efac; --warn: #fbbf24; --danger: #fb7185;
+    --ring-bg: rgba(255,255,255,0.06); --accent: #7bd6ff;
     --shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
-    --radius: 18px;
-
-    --logo-grad: linear-gradient(135deg, #7bd6ff, #a98bff);
+    --radius: 18px; --logo-grad: linear-gradient(135deg, #7bd6ff, #a98bff);
+    --focus: 0 0 0 3px rgba(119,207,255,0.28);
   }
   :root[data-theme="light"]{
     --bg: #f7f9fc;
@@ -42,19 +32,13 @@
             #f7f9fc;
     --card: rgba(255,255,255,0.9);
     --border: rgba(10, 30, 50, 0.08);
-    --text: #0f172a;
-    --muted: #4b5563;
-
+    --text: #0f172a; --muted: #4b5563;
     --ring-bg: rgba(15,23,42,0.07);
     --shadow: 0 10px 28px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
-
-    --primary: #2563eb;
-    --primary-2: #7c3aed;
-    --accent: #2563eb;
-
+    --primary: #2563eb; --primary-2: #7c3aed; --accent: #2563eb;
     --logo-grad: linear-gradient(135deg, #60a5fa, #a78bfa);
+    --focus: 0 0 0 3px rgba(37,99,235,0.28);
   }
-
   :root[data-theme="pride"]{
     --bg: #0a0b0f;
     --bg-2:
@@ -65,167 +49,147 @@
       #0a0b0f;
     --card: rgba(18, 20, 35, 0.78);
     --border: rgba(255,255,255,0.12);
-    --text: #ffffff;
-    --muted: #cbd5e1;
-
+    --text: #ffffff; --muted: #cbd5e1;
     --ring-bg: rgba(255,255,255,0.12);
     --shadow: 0 10px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05);
-
-    --primary: #ef4444;
-    --primary-2: #8b5cf6;
-    --accent: #ff7ab6;
-
-    --logo-grad: linear-gradient(90deg,
-      #ef4444, #f97316, #f59e0b, #22c55e, #3b82f6, #8b5cf6);
+    --primary: #ef4444; --primary-2: #8b5cf6; --accent: #ff7ab6;
+    --logo-grad: linear-gradient(90deg,#ef4444,#f97316,#f59e0b,#22c55e,#3b82f6,#8b5cf6);
   }
-
-  * { box-sizing: border-box }
-  html, body { height: 100% }
-  body{
-    margin:0;
-    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    color: var(--text);
-    background: var(--bg-2);
-    background-attachment: fixed;
-    letter-spacing: 0.2px;
-  }
-
-  :root[data-theme="pride"] .card{ border-image: linear-gradient(90deg,#ef4444,#f97316,#f59e0b,#22c55e,#3b82f6,#8b5cf6) 1; }
-  :root[data-theme="pride"] .chip, :root[data-theme="pride"] .badge{ border-image: linear-gradient(90deg,#ef4444,#f59e0b,#22c55e,#3b82f6,#8b5cf6) 1; }
-
-  .site { max-width: 1100px; margin: 28px auto; padding: 0 20px 40px; }
-  .header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 18px; }
-  .brand { display:flex; align-items:center; gap:12px; }
-  .logo { width:38px; height:38px; border-radius:12px; background: var(--logo-grad); display:grid; place-items:center; color:#0b1020; font-weight:900; box-shadow: 0 8px 20px rgba(121, 209, 255, 0.25); }
-  .brand h1 { font-size: 22px; margin:0; }
-  .brand p { margin:0; color:var(--muted); font-size:13px }
-  .actions { display:flex; gap:10px; align-items:center }
-  .grid { display:grid; gap:18px; grid-template-columns: 1.1fr 1fr; }
-  @media (max-width: 960px){ .grid { grid-template-columns: 1fr; } }
-
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; backdrop-filter: blur(8px); }
-  .section-title{ margin: 0 0 8px 0; font-weight: 700; letter-spacing: 0.3px; }
-  .divider{ height:1px; background: var(--border); margin: 12px 0 16px; }
-
-  label { font-size: 12px; color: var(--muted); margin-bottom:6px; display:block }
-  input { width:100%; border:1px solid var(--border); background: rgba(0,0,0,0.25); color: var(--text); border-radius: 12px; padding: 12px 14px; outline: none; transition: border-color .15s ease, transform .04s ease; }
-  :root[data-theme="light"] input { background: rgba(255,255,255,0.8) }
-  input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(119,207,255,0.16) }
-  .row { display:grid; grid-template-columns: 1fr 1fr; gap: 12px }
-  .row-3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px }
-  @media (max-width: 560px){ .row, .row-3 { grid-template-columns: 1fr } }
-  .controls { display:flex; gap:10px; flex-wrap:wrap; align-items:center }
-  button{ appearance:none; border:1px solid var(--border); background: rgba(255,255,255,0.05); color: var(--text); font-weight: 700; letter-spacing: .2px; padding: 10px 14px; border-radius: 12px; cursor:pointer; transition: transform .04s ease, filter .15s ease, background .15s ease; }
-  button:hover{ transform: translateY(-1px); filter: brightness(1.05) }
-  .btn-primary{ background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #0b1020; border: none; }
-  .btn-danger{ background: #2a0f15; border-color:#471e26; color:#ffd9df }
-  .btn-warn  { background: #211a0b; border-color:#3b2d10; color:#fde7b0 }
-  .btn-ghost { background: rgba(255,255,255,0.03) }
-  .toggle{ border-radius: 999px; padding: 8px 12px; font-weight:700; background: rgba(255,255,255,0.06); }
-
-  .meta{ display:flex; gap:10px; flex-wrap:wrap; align-items:center }
-  .badge{ display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.04); border:1px solid var(--border); border-radius: 999px; padding: 8px 12px; font-weight: 700; color: var(--text); }
-
-  .ring-wrap{ display:grid; place-items:center }
-  .ring{ --size: 160px; width: var(--size); height: var(--size); border-radius: 50%; background: conic-gradient(var(--accent) 0deg 0deg, var(--ring-bg) 0deg 360deg); display:grid; place-items:center; position: relative; box-shadow: inset 0 0 0 8px rgba(0,0,0,0.15), 0 16px 30px rgba(0,0,0,0.25); }
-  .ring:after{ content:""; position:absolute; inset:10px; border-radius:50%; background: radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,0.12), transparent 50%), linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.12)); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
-  .ring .inner{ position:absolute; inset:18px; border-radius:50%; display:grid; place-items:center; }
-  .ring .value{ font-weight: 900; font-size: 26px }
-  .ring .cap{ font-size: 12px; color: var(--muted) }
-
-  table{ width:100%; border-collapse: collapse; font-size: 13.5px }
-  th, td{ padding: 10px 10px; border-bottom:1px dashed var(--border); }
-  th{ text-align:left; color: var(--muted); font-weight:800; letter-spacing:.2px }
-  tbody tr:hover { background: rgba(255,255,255,0.03) }
-  .right{ text-align:right }
-  .empty{ color: var(--muted); text-align:center; padding: 14px 0 }
-
-  .toast{ border-left:4px solid var(--good); background: rgba(0, 255, 160, 0.08); padding: 12px 14px; border-radius: 12px; display:none; }
-
-  .big-timer{ display:grid; place-items:center; margin: 10px 0 6px; }
-  .clock{ --size: 240px; width: var(--size); height: var(--size); position: relative; border-radius:50%;
-    background: radial-gradient(140% 120% at 25% 20%, rgba(255,255,255,0.08), transparent 55%),
-                linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18));
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 18px 36px rgba(0,0,0,0.30);
-  }
-  .clock svg{ position:absolute; inset:0; transform: rotate(-90deg); }
-  .clock .center{ position:absolute; inset:0; display:grid; place-items:center; text-align:center; }
-  .clock .time{ font-weight:900; font-size: 34px; letter-spacing: 1px; }
-  .clock .cap{ font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .clock.running{ box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 18px 36px rgba(0,0,0,0.30), 0 0 32px rgba(121, 209, 255, 0.25); }
-  .clock .tickmarks{ opacity: .35 }
-
-  .pomo{ margin-top:14px; border-top:1px dashed var(--border); padding-top:14px }
-  .pomo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px }
-  .pomo-title{ font-weight:800 }
-  .pomo-wrap{ display:grid; grid-template-columns: 160px 1fr; gap:14px }
-  @media(max-width:600px){ .pomo-wrap{ grid-template-columns: 1fr } }
-  .pomo-clock{ width:160px; height:160px; position:relative }
-  .pomo-clock svg{ position:absolute; inset:0; transform: rotate(-90deg); }
-  .pomo-center{ position:absolute; inset:0; display:grid; place-items:center; text-align:center }
-  .pomo-time{ font-size:28px; font-weight:900 }
-  .pomo-phase{ font-size:12px; color:var(--muted) }
-  .pomo-controls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
-  .pomo-controls button{ padding:8px 12px; border-radius:12px }
-  .pomo-settings{ display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; margin-top:8px }
-  .pomo-settings input{ padding:10px 10px }
-  .chip{ padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-weight:700 }
-  .phase-work  { border-color: rgba(123,214,255,.35) }
-  .phase-short { border-color: rgba(134,239,172,.35) }
-  .phase-long  { border-color: rgba(169,139,255,.35) }
-  .btn-finish{ border:1px solid var(--border); background: rgba(255,255,255,0.04); padding:8px 12px; border-radius:999px; font-weight:800; }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;color:var(--text);background:var(--bg-2);background-attachment:fixed;letter-spacing:.2px}
+  :root[data-theme="pride"] .card{border-image:linear-gradient(90deg,#ef4444,#f97316,#f59e0b,#22c55e,#3b82f6,#8b5cf6) 1}
+  :root[data-theme="pride"] .chip,.badge{border-image:linear-gradient(90deg,#ef4444,#f59e0b,#22c55e,#3b82f6,#8b5cf6) 1}
+  .site{max-width:1100px;margin:28px auto;padding:0 20px 40px}
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:38px;height:38px;border-radius:12px;background:var(--logo-grad);display:grid;place-items:center;color:#0b1020;font-weight:900;box-shadow:0 8px 20px rgba(121,209,255,.25)}
+  .brand h1{font-size:22px;margin:0}
+  .brand p{margin:0;color:var(--muted);font-size:13px}
+  .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .grid{display:grid;gap:18px;grid-template-columns:1.1fr 1fr}
+  @media (max-width:960px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;backdrop-filter:blur(8px)}
+  .section-title{margin:0 0 8px 0;font-weight:700;letter-spacing:.3px}
+  .divider{height:1px;background:var(--border);margin:12px 0 16px}
+  label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
+  input{width:100%;border:1px solid var(--border);background:rgba(0,0,0,.25);color:var(--text);border-radius:12px;padding:12px 14px;outline:none;transition:border-color .15s ease,transform .04s ease}
+  :root[data-theme="light"] input{background:rgba(255,255,255,.8)}
+  input:focus{border-color:var(--primary);box-shadow:var(--focus)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media (max-width:560px){.row,.row-3{grid-template-columns:1fr}}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  button{appearance:none;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-weight:700;letter-spacing:.2px;padding:10px 14px;border-radius:12px;cursor:pointer;transition:transform .04s ease,filter .15s ease,background .15s ease}
+  button:hover{transform:translateY(-1px);filter:brightness(1.05)}
+  .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#0b1020;border:none}
+  .btn-danger{background:#2a0f15;border-color:#471e26;color:#ffd9df}
+  .btn-warn{background:#211a0b;border-color:#3b2d10;color:#fde7b0}
+  .btn-ghost{background:rgba(255,255,255,.03)}
+  .toggle{border-radius:999px;padding:8px 12px;font-weight:700;background:rgba(255,255,255,.06)}
+  .meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:999px;padding:8px 12px;font-weight:700;color:var(--text)}
+  .ring-wrap{display:grid;place-items:center}
+  .ring{--size:160px;width:var(--size);height:var(--size);border-radius:50%;background:conic-gradient(var(--accent) 0deg 0deg,var(--ring-bg) 0deg 360deg);display:grid;place-items:center;position:relative;box-shadow:inset 0 0 0 8px rgba(0,0,0,.15),0 16px 30px rgba(0,0,0,.25)}
+  .ring:after{content:"";position:absolute;inset:10px;border-radius:50%;background:radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,.12), transparent 50%),linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.12));box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+  .ring .inner{position:absolute;inset:18px;border-radius:50%;display:grid;place-items:center}
+  .ring .value{font-weight:900;font-size:26px}
+  .ring .cap{font-size:12px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{padding:10px 10px;border-bottom:1px dashed var(--border)}
+  th{text-align:left;color:var(--muted);font-weight:800;letter-spacing:.2px}
+  tbody tr:hover{background:rgba(255,255,255,.03)}
+  .right{text-align:right}
+  .empty{color:var(--muted);text-align:center;padding:14px 0}
+  .toast{border-left:4px solid var(--good);background:rgba(0,255,160,.08);padding:12px 14px;border-radius:12px;display:none;max-width:600px}
+  .toast.warn{border-left-color:var(--warn);background:rgba(250,204,21,.12)}
+  .toast.error{border-left-color:var(--danger);background:rgba(251,113,133,.12)}
+  .toastbar{display:flex;align-items:center;gap:10px}
+  .big-timer{display:grid;place-items:center;margin:10px 0 6px}
+  .clock{--size:240px;width:var(--size);height:var(--size);position:relative;border-radius:50%;
+    background:radial-gradient(140% 120% at 25% 20%, rgba(255,255,255,.08), transparent 55%),
+               linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.18));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.05),0 18px 36px rgba(0,0,0,.30)}
+  .clock svg{position:absolute;inset:0;transform:rotate(-90deg)}
+  .clock .center{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .clock .time{font-weight:900;font-size:34px;letter-spacing:1px}
+  .clock .cap{font-size:12px;color:var(--muted);margin-top:4px}
+  .clock.running{box-shadow:inset 0 0 0 1px rgba(255,255,255,.05),0 18px 36px rgba(0,0,0,.30),0 0 32px rgba(121,209,255,.25)}
+  .clock .tickmarks{opacity:.35}
+  .pomo{margin-top:14px;border-top:1px dashed var(--border);padding-top:14px}
+  .pomo-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .pomo-title{font-weight:800}
+  .pomo-wrap{display:grid;grid-template-columns:160px 1fr;gap:14px}
+  @media(max-width:600px){.pomo-wrap{grid-template-columns:1fr}}
+  .pomo-clock{width:160px;height:160px;position:relative}
+  .pomo-clock svg{position:absolute;inset:0;transform:rotate(-90deg)}
+  .pomo-center{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .pomo-time{font-size:28px;font-weight:900}
+  .pomo-phase{font-size:12px;color:var(--muted)}
+  .pomo-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pomo-controls button{padding:8px 12px;border-radius:12px}
+  .pomo-settings{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}
+  .pomo-settings input{padding:10px 10px}
+  .chip{padding:6px 10px;border:1px solid var(--border);border-radius:999px;font-weight:700}
+  .phase-work{border-color:rgba(123,214,255,.35)}
+  .phase-short{border-color:rgba(134,239,172,.35)}
+  .phase-long{border-color:rgba(169,139,255,.35)}
+  .btn-finish{border:1px solid var(--border);background:rgba(255,255,255,.04);padding:8px 12px;border-radius:999px;font-weight:800}
+  .kbd{font:600 12px/1 Inter,system-ui;background:rgba(255,255,255,.08);border:1px solid var(--border);padding:2px 6px;border-radius:6px}
+  .row-actions{display:flex;gap:6px;justify-content:flex-end}
 </style>
 </head>
 <body>
-
   <div class="site">
     <div class="header">
       <div class="brand">
-        <div class="logo">⏱</div>
+        <div class="logo" aria-hidden="true">⏱</div>
         <div>
           <h1>Study Tracker</h1>
           <p>Personal focus & progress — saved privately in your browser.</p>
         </div>
       </div>
       <div class="actions">
-        <button id="themeBtn" class="toggle">🌙 Dark</button>
-        <a id="exportCsv" class="btn-ghost" style="text-decoration:none; padding:10px 14px; border-radius:12px; border:1px solid var(--border)" href="javascript:void(0)">Export CSV</a>
+        <button id="themeBtn" class="toggle" aria-label="Toggle theme">🌙 Dark</button>
+        <button id="importJson" class="btn-ghost" aria-label="Import JSON backup">Import JSON</button>
+        <a id="exportJson" class="btn-ghost" role="button" aria-label="Export JSON backup" style="text-decoration:none; padding:10px 14px; border-radius:12px; border:1px solid var(--border)" href="javascript:void(0)">Export JSON</a>
+        <a id="exportCsv" class="btn-ghost" role="button" aria-label="Export CSV" style="text-decoration:none; padding:10px 14px; border-radius:12px; border:1px solid var(--border)" href="javascript:void(0)">Export CSV</a>
       </div>
     </div>
 
     <div class="grid">
       <!-- LEFT -->
-      <section class="card">
+      <section class="card" aria-label="Session controls">
         <h3 class="section-title">Session</h3>
         <div class="row">
           <div>
-            <label>Subject</label>
-            <input id="subject" list="subject-list" placeholder="e.g., Algorithms, Biochem" />
+            <label for="subject">Subject</label>
+            <input id="subject" list="subject-list" placeholder="e.g., Algorithms, Biochem" autocomplete="off" />
             <datalist id="subject-list"></datalist>
           </div>
           <div>
-            <label>Note (optional)</label>
-            <input id="note" placeholder="topic / pages / tasks…" />
+            <label for="note">Note (optional)</label>
+            <input id="note" placeholder="topic / pages / tasks…" autocomplete="off" />
           </div>
         </div>
 
         <div class="row" style="margin-top:10px">
           <div>
-            <label>Daily goal (hours)</label>
+            <label for="goal">Daily goal (hours)</label>
             <input id="goal" type="number" min="0" max="24" step="0.5" value="6" />
           </div>
           <div>
             <label>Session timer</label>
             <div class="controls">
-              <button id="startBtn" class="btn-primary">Start</button>
-              <button id="stopBtn"  class="btn-danger" disabled>Stop</button>
-              <button id="resetTodayBtn" class="btn-warn">Reset today</button>
-              <button id="clearAll" class="btn-ghost">Clear all</button>
+              <button id="startBtn" class="btn-primary" aria-label="Start session (Space)">Start</button>
+              <button id="stopBtn"  class="btn-danger" aria-label="Stop session (Space)" disabled>Stop</button>
+              <button id="resetTodayBtn" class="btn-warn" aria-label="Reset today (R)">Reset today</button>
+              <button id="clearAll" class="btn-ghost" aria-label="Clear all data">Clear all</button>
             </div>
           </div>
         </div>
 
-        <div class="big-timer">
+        <div class="big-timer" aria-live="polite">
           <div class="clock" id="bigClock">
             <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
               <g class="tickmarks"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8" /></g>
@@ -250,7 +214,7 @@
         <div class="meta">
           <div class="badge">📅 Today: <span id="todayTotal">0h 0m</span></div>
           <div class="badge">🔥 Streak: <span id="streak">0 days</span></div>
-          <button id="finishDayBtn" class="btn-finish">FINISH SESSION</button>
+          <button id="finishDayBtn" class="btn-finish" aria-label="Finish or resume today (F)">FINISH SESSION</button>
         </div>
 
         <p id="toast" class="toast" style="margin-top:12px"></p>
@@ -258,23 +222,23 @@
         <div class="divider"></div>
         <h3 class="section-title" style="margin-bottom:6px">Recent sessions</h3>
         <div style="max-height: 290px; overflow:auto; border-radius:12px">
-          <table>
+          <table aria-label="Recent sessions">
             <thead><tr>
-              <th>Start</th><th>End</th><th class="right">Minutes</th><th>Subject</th><th>Note</th>
+              <th>Start</th><th>End</th><th class="right">Minutes</th><th>Subject</th><th>Note</th><th class="right">Actions</th>
             </tr></thead>
             <tbody id="logBody">
-              <tr><td colspan="5" class="empty">No sessions yet.</td></tr>
+              <tr><td colspan="6" class="empty">No sessions yet.</td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
       <!-- RIGHT -->
-      <section class="card">
+      <section class="card" aria-label="Progress & analytics">
         <div class="row">
           <div class="ring-wrap">
             <h3 class="section-title" style="width:100%">Daily goal</h3>
-            <div class="ring" id="ring">
+            <div class="ring" id="ring" aria-label="Daily goal completion">
               <div class="inner">
                 <div style="text-align:center">
                   <div class="value" id="ringValue">0%</div>
@@ -285,18 +249,36 @@
           </div>
           <div>
             <h3 class="section-title">Last 7 days</h3>
-            <canvas id="chart7" height="200"></canvas>
+            <canvas id="chart7" height="200" aria-label="Hours in last 7 days" role="img"></canvas>
           </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row-3" id="statsRow" aria-label="Stats">
+          <div class="badge" id="statWeek">🗓️ This week: 0.0h</div>
+          <div class="badge" id="statAvg">📈 Avg/day: 0.0h</div>
+          <div class="badge" id="statBest">🏆 Best streak: 0 days</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div>
+          <h3 class="section-title">By subject (30 days)</h3>
+          <table>
+            <thead><tr><th>Subject</th><th class="right">Hours</th></tr></thead>
+            <tbody id="bySubjectBody"><tr><td colspan="2" class="empty">No data yet.</td></tr></tbody>
+          </table>
         </div>
 
         <!-- Pomodoro -->
         <div class="pomo">
           <div class="pomo-head">
-            <div class="pomo-title">Pomodoro</div>
+            <div class="pomo-title">Pomodoro <span class="kbd">S</span> start/pause • <span class="kbd">K</span> skip</div>
             <div id="pomoCycleInfo" class="chip phase-work">Cycle 1 • Work</div>
           </div>
           <div class="pomo-wrap">
-            <div class="pomo-clock">
+            <div class="pomo-clock" aria-live="polite">
               <svg viewBox="0 0 100 100" aria-hidden="true">
                 <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
                 <circle id="pomoRing" cx="50" cy="50" r="45" fill="none" stroke="url(#gradPomo)" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 999" stroke-dashoffset="0"/>
@@ -315,10 +297,10 @@
 
             <div>
               <div class="pomo-controls">
-                <button id="pomoStart" class="btn-primary">Start</button>
-                <button id="pomoPause" class="btn-ghost" disabled>Pause</button>
-                <button id="pomoSkip" class="btn-warn">Skip</button>
-                <button id="pomoReset" class="btn-ghost">Reset</button>
+                <button id="pomoStart" class="btn-primary" aria-label="Start pomodoro (S)">Start</button>
+                <button id="pomoPause" class="btn-ghost" aria-label="Pause pomodoro (S)" disabled>Pause</button>
+                <button id="pomoSkip" class="btn-warn" aria-label="Skip pomodoro (K)">Skip</button>
+                <button id="pomoReset" class="btn-ghost" aria-label="Reset pomodoro">Reset</button>
                 <label class="chip" style="display:flex;align-items:center;gap:8px">
                   <input id="pomoAuto" type="checkbox" style="accent-color:#7bd6ff"> Auto-start next
                 </label>
@@ -331,23 +313,23 @@
               </div>
               <div class="pomo-settings">
                 <div>
-                  <label>Work (min)</label>
+                  <label for="pomoWork">Work (min)</label>
                   <input id="pomoWork" type="number" min="1" max="120" step="1" value="25">
                 </div>
                 <div>
-                  <label>Short (min)</label>
+                  <label for="pomoShort">Short (min)</label>
                   <input id="pomoShort" type="number" min="1" max="60" step="1" value="5">
                 </div>
                 <div>
-                  <label>Long (min)</label>
+                  <label for="pomoLong">Long (min)</label>
                   <input id="pomoLong" type="number" min="5" max="120" step="1" value="15">
                 </div>
                 <div>
-                  <label>Long every</label>
+                  <label for="pomoInterval">Long every</label>
                   <input id="pomoInterval" type="number" min="2" max="12" step="1" value="4">
                 </div>
                 <div>
-                  <label>Cycle</label>
+                  <label for="pomoCycleDisp">Cycle</label>
                   <input id="pomoCycleDisp" type="text" value="1" disabled>
                 </div>
               </div>
@@ -360,16 +342,22 @@
   </div>
 
 <script>
-/* ========================== STATE ========================== */
+/* ========================== CONSTANTS ========================== */
 const LS_KEY = "study-tracker-log-v1";
 const LS_SUBJECTS = "study-tracker-subjects";
 const LS_GOAL = "study-tracker-goal";
 const LS_THEME = "study-tracker-theme";
 const LS_DAY_DONE = "study-tracker-day-finished";
+const LS_POMO_KEY = "study-tracker-pomodoro";
+const LS_VERSION = "study-tracker-version";
+const APP_VERSION = 2;
 
+/* ========================== STATE ========================== */
 let LOG = loadLog();
-let subjectsSet = new Set(JSON.parse(localStorage.getItem(LS_SUBJECTS) || "[]"));
+let subjectsSet = new Set(safeParse(localStorage.getItem(LS_SUBJECTS), []));
 let session = { running:false, start:null, timerId:null };
+
+let undoBin = null; // {entry, index, ttlId}
 
 /* ========================== UTIL ========================== */
 const pad = n => String(n).padStart(2, "0");
@@ -380,6 +368,10 @@ const dateKey = d => d.toISOString().slice(0,10);
 const human = dt => new Date(dt).toLocaleString([], {hour12:false});
 const saveLog = () => localStorage.setItem(LS_KEY, JSON.stringify(LOG));
 const $ = id => document.getElementById(id);
+function safeParse(raw, fallback){
+  try{ const v = JSON.parse(raw ?? ""); return v ?? fallback; }catch{ return fallback; }
+}
+function clamp(n, min, max){ return Math.min(max, Math.max(min, n)); }
 
 /* ========================== DOM ========================== */
 const subjectEl = $("subject"), noteEl = $("note"), goalEl = $("goal");
@@ -387,9 +379,12 @@ const startBtn = $("startBtn"), stopBtn  = $("stopBtn"), resetTodayBtn = $("rese
 const todayTotal = $("todayTotal"), streakEl = $("streak");
 const ring = $("ring"), ringValue = $("ringValue"), ringCap = $("ringCap");
 const toast = $("toast"), clearAllBtn = $("clearAll"), exportCsvBtn = $("exportCsv");
+const exportJsonBtn = $("exportJson"), importJsonBtn = $("importJson");
 const subjectList = $("subject-list");
 const themeBtn = $("themeBtn");
 const finishDayBtn = $("finishDayBtn");
+const statWeek = $("statWeek"), statAvg = $("statAvg"), statBest = $("statBest");
+const bySubjectBody = $("bySubjectBody");
 
 /* BIG CLOCK DOM */
 const bigClock = $("bigClock");
@@ -412,10 +407,28 @@ themeBtn.addEventListener("click", () => {
   renderChart7(); // keep chart colors in sync
 });
 
-/* ========================== LOADERS ========================== */
+/* ========================== LOADERS & MIGRATION ========================== */
+function migrateIfNeeded(){
+  const cur = Number(localStorage.getItem(LS_VERSION) || 1);
+  if (cur >= APP_VERSION) return;
+
+  // v2: normalize minutes to Number(2-decimals), ensure dates as ISO strings in LS payload (already handled on save)
+  if (cur < 2){
+    LOG = LOG.map(r => ({
+      ...r,
+      minutes: Math.round(Number(r.minutes || 0)*100)/100,
+      start: new Date(r.start),
+      end: new Date(r.end)
+    }));
+    saveLog();
+  }
+  localStorage.setItem(LS_VERSION, String(APP_VERSION));
+}
 function loadLog(){
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]").map(r => ({...r, start:new Date(r.start), end:new Date(r.end)})); }
-  catch { return []; }
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+    return parsed.map(r => ({...r, start:new Date(r.start), end:new Date(r.end)}));
+  } catch { return []; }
 }
 function refreshSubjectList(){
   subjectList.innerHTML = "";
@@ -424,8 +437,9 @@ function refreshSubjectList(){
   });
 }
 goalEl.value = Number(localStorage.getItem(LS_GOAL) || goalEl.value);
-goalEl.addEventListener("change", ()=>{ localStorage.setItem(LS_GOAL, goalEl.value); renderTotals(); });
+goalEl.addEventListener("change", ()=>{ localStorage.setItem(LS_GOAL, clamp(Number(goalEl.value)||0,0,24)); renderTotals(); });
 refreshSubjectList();
+migrateIfNeeded();
 
 /* ========================== CHART (7 days) ========================== */
 const chart = new Chart($("chart7"), {
@@ -441,7 +455,6 @@ const chart = new Chart($("chart7"), {
   }
 });
 
-/* ---- NEW: compute + render last 7 days ---- */
 function lastNDaysKeys(n){
   const keys = [];
   const d = new Date();
@@ -462,38 +475,67 @@ function renderChart7(){
   const byDay = totalsByDay();
   const keys = lastNDaysKeys(7);
   const labels = keys.map(k => weekdayShort(k));
-  const hours = keys.map(k => (byDay[k] || 0) / 60); // minutes -> hours
-
+  const hours = keys.map(k => (byDay[k] || 0) / 60);
   const muted = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
-
   chart.data.labels = labels;
   chart.data.datasets[0].data = hours;
   chart.options.scales.x.ticks.color = muted;
   chart.options.scales.y.ticks.color = muted;
   chart.update();
 }
-/* ----------------------------------------- */
 
 /* ========================== RENDER ========================== */
 function renderLog(){
   const body = $("logBody");
-  if(LOG.length===0){ body.innerHTML = `<tr><td colspan="5" class="empty">No sessions yet.</td></tr>`; return; }
-  body.innerHTML = LOG.slice().reverse().slice(0,60).map(s=>`
-    <tr>
-      <td>${human(s.start)}</td>
-      <td>${human(s.end)}</td>
-      <td class="right">${s.minutes.toFixed(2)}</td>
-      <td>${s.subject || ""}</td>
-      <td>${s.note || ""}</td>
-    </tr>
-  `).join("");
+  if(LOG.length===0){ body.innerHTML = `<tr><td colspan="6" class="empty">No sessions yet.</td></tr>`; return; }
+  body.innerHTML = LOG.slice().reverse().slice(0,120).map((s, idxRev)=>{
+    const idx = LOG.length - 1 - idxRev; // original index
+    const sid = `row-${idx}`;
+    return `
+      <tr data-idx="${idx}">
+        <td>${human(s.start)}</td>
+        <td>${human(s.end)}</td>
+        <td class="right">${Number(s.minutes).toFixed(2)}</td>
+        <td contenteditable="true" data-field="subject" aria-label="Edit subject" spellcheck="false">${s.subject || ""}</td>
+        <td contenteditable="true" data-field="note" aria-label="Edit note" spellcheck="false">${s.note || ""}</td>
+        <td class="right">
+          <div class="row-actions">
+            <button class="btn-ghost" data-action="save" aria-label="Save edits">Save</button>
+            <button class="btn-ghost" data-action="delete" aria-label="Delete entry">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  body.querySelectorAll("button[data-action='delete']").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      const tr = e.currentTarget.closest("tr");
+      const idx = Number(tr.dataset.idx);
+      deleteEntry(idx);
+    });
+  });
+  body.querySelectorAll("button[data-action='save']").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      const tr = e.currentTarget.closest("tr");
+      const idx = Number(tr.dataset.idx);
+      const subj = tr.querySelector("[data-field='subject']").textContent.trim() || null;
+      const note = tr.querySelector("[data-field='note']").textContent.trim() || null;
+      LOG[idx].subject = subj;
+      LOG[idx].note = note;
+      saveLog();
+      if(subj){ subjectsSet.add(subj); localStorage.setItem(LS_SUBJECTS, JSON.stringify([...subjectsSet])); refreshSubjectList(); }
+      toastMsg("Saved changes.");
+      renderTotals();
+    });
+  });
 }
 
 function totalsByDay(){
   const m = {};
   for(const s of LOG){
     const k = dateKey(new Date(s.start));
-    m[k] = (m[k]||0) + s.minutes;
+    m[k] = (m[k]||0) + Number(s.minutes||0);
   }
   return m;
 }
@@ -504,6 +546,50 @@ function computeStreak(){
   let streak = 0;
   while((byDay[dateKey(d)] || 0) > 0){ streak++; d.setDate(d.getDate()-1); }
   return streak;
+}
+
+function computeBestStreak(){
+  const byDay = totalsByDay();
+  const days = Object.keys(byDay).sort();
+  let best = 0, cur = 0, prev = null;
+  for(const key of days){
+    if((byDay[key]||0) <= 0) continue;
+    if(!prev){ cur = 1; best = Math.max(best, cur); prev = key; continue; }
+    const pd = new Date(prev), kd = new Date(key);
+    const diff = Math.round((kd - pd)/86400000);
+    cur = diff === 1 ? cur+1 : 1;
+    best = Math.max(best, cur); prev = key;
+  }
+  return best;
+}
+
+function statsWindow(days=7){
+  const byDay = totalsByDay();
+  const keys = lastNDaysKeys(days);
+  const mins = keys.map(k => byDay[k] || 0);
+  const sum = mins.reduce((a,b)=>a+b,0);
+  const avg = sum/days;
+  return {sum, avg};
+}
+
+function bySubject(days=30){
+  const cutoff = new Date(); cutoff.setHours(0,0,0,0); cutoff.setDate(cutoff.getDate()-days+1);
+  const map = new Map();
+  for(const s of LOG){
+    if (new Date(s.start) >= cutoff){
+      const key = (s.subject || "—");
+      map.set(key, (map.get(key)||0) + Number(s.minutes||0));
+    }
+  }
+  return [...map.entries()].sort((a,b)=>b[1]-a[1]);
+}
+
+function renderBySubject(){
+  const rows = bySubject(30);
+  if(!rows.length){ bySubjectBody.innerHTML = `<tr><td colspan="2" class="empty">No data yet.</td></tr>`; return; }
+  bySubjectBody.innerHTML = rows.map(([subj, mins])=>`
+    <tr><td>${subj}</td><td class="right">${(mins/60).toFixed(1)}</td></tr>
+  `).join("");
 }
 
 function renderTotals(){
@@ -522,15 +608,25 @@ function renderTotals(){
   ringCap.textContent = `${(mins/60).toFixed(1)} / ${goalH}h`;
 
   const s = computeStreak();
+  const best = computeBestStreak();
   streakEl.textContent = `${s} ${s===1?"day":"days"}`;
-  updateFinishUI();
+  statBest.textContent = `🏆 Best streak: ${best} ${best===1?"day":"days"}`;
 
-  renderChart7(); // keep bars updated
+  const w = statsWindow(7);
+  statWeek.textContent = `🗓️ This week: ${(w.sum/60).toFixed(1)}h`;
+  statAvg.textContent = `📈 Avg/day: ${(w.avg/60).toFixed(1)}h`;
+
+  updateFinishUI();
+  renderBySubject();
+  renderChart7();
 }
 
-function toastMsg(text){
-  toast.textContent = text; toast.style.display = "block";
-  setTimeout(()=> toast.style.display = "none", 2300);
+function toastMsg(text, type){
+  toast.className = `toast${type? " " + type : ""}`;
+  toast.innerHTML = `<span class="toastbar">${text}</span>`;
+  toast.style.display = "block";
+  clearTimeout(toast._tid);
+  toast._tid = setTimeout(()=> toast.style.display = "none", 2600);
 }
 
 /* ========================== BIG CLOCK ========================== */
@@ -549,10 +645,7 @@ function updateBigClock(secs){
 
 /* ========================== FINISH DAY ========================== */
 function getTodayKey(){ const d = new Date(); d.setHours(0,0,0,0); return dateKey(d); }
-function isDayFinished(){
-  const k = localStorage.getItem(LS_DAY_DONE);
-  return k === getTodayKey();
-}
+function isDayFinished(){ return localStorage.getItem(LS_DAY_DONE) === getTodayKey(); }
 function clearOldFinishFlag(){
   const k = localStorage.getItem(LS_DAY_DONE);
   if (k && k !== getTodayKey()) localStorage.removeItem(LS_DAY_DONE);
@@ -583,10 +676,7 @@ function tick(){
   updateBigClock(secs);
 }
 function start(){
-  if(isDayFinished()){
-    toastMsg("You've finished today. Click “Resume today” to reopen.");
-    return;
-  }
+  if(isDayFinished()){ toastMsg("You've finished today. Click “Resume today” to reopen.", "warn"); return; }
   if(session.running) return;
   session.running = true; session.start = Date.now();
   session.timerId = setInterval(tick, 1000);
@@ -608,7 +698,7 @@ function stop(){
   if(entry.subject){ subjectsSet.add(entry.subject);
     localStorage.setItem(LS_SUBJECTS, JSON.stringify([...subjectsSet])); refreshSubjectList(); }
 
-  startBtn.disabled = isDayFinished() ? true : false;
+  startBtn.disabled = isDayFinished();
   stopBtn.disabled = true; updateBigClock(0);
   renderLog(); renderTotals();
 
@@ -628,6 +718,30 @@ function resetToday(){
   LOG = LOG.filter(s => dateKey(new Date(s.start)) !== k);
   saveLog(); renderLog(); renderTotals();
   toastMsg("Cleared today’s entries.");
+}
+
+/* ========================== CRUD: Delete + Undo ========================== */
+function deleteEntry(idx){
+  if (idx<0 || idx>=LOG.length) return;
+  const removed = LOG.splice(idx,1)[0];
+  saveLog(); renderLog(); renderTotals();
+  if (undoBin?.ttlId) clearTimeout(undoBin.ttlId);
+  undoBin = {
+    entry: removed, index: idx,
+    ttlId: setTimeout(()=>{ undoBin = null; }, 6000)
+  };
+  const btn = `<button id="undoBtn" class="btn-ghost" style="margin-left:8px">Undo</button>`;
+  toastMsg(`Deleted session (${(removed.minutes).toFixed(2)}m). ${btn}`);
+  setTimeout(()=>{
+    const ub = $("undoBtn");
+    if (ub) ub.addEventListener("click", ()=>{
+      if (!undoBin) return;
+      LOG.splice(undoBin.index, 0, undoBin.entry);
+      saveLog(); renderLog(); renderTotals();
+      clearTimeout(undoBin.ttlId); undoBin = null;
+      toastMsg("Restored.");
+    });
+  },0);
 }
 
 /* ========================== SOUND (Pomodoro) ========================== */
@@ -708,7 +822,6 @@ const P = {
 };
 let POMO_CIRC = 2 * Math.PI * 45;
 
-const LS_POMO_KEY = "study-tracker-pomodoro";
 function loadPomoSettings(){
   try{
     const s = JSON.parse(localStorage.getItem(LS_POMO_KEY) || "{}");
@@ -773,7 +886,6 @@ function pomoReset(){
 function pomoSkip(){
   pomoPause(); nextPhase(true, P.state.phase);
 }
-
 function nextPhase(fromSkip=false, endedPhase=null){
   const n = +P.interval.value;
   if(P.state.phase === "work"){
@@ -795,7 +907,6 @@ function nextPhase(fromSkip=false, endedPhase=null){
   toastMsg(fromSkip ? "Skipped to next phase." : `Time! ${P.state.phase.toUpperCase()} now.`);
   if(P.auto.checked){ pomoStart(); }
 }
-
 function pomoTick(){
   if(P.state.secs > 0){ P.state.secs--; updatePomoUI(); }
   if(P.state.secs <= 0){
@@ -804,7 +915,6 @@ function pomoTick(){
     nextPhase(false, ended);
   }
 }
-
 function initPomo(){
   loadPomoSettings();
   Sound.enabledEl = P.soundToggle;
@@ -820,6 +930,84 @@ function initPomo(){
   P.skipBtn.addEventListener("click", pomoSkip);
 }
 
+/* ========================== IMPORT / EXPORT ========================== */
+function exportCsv(){
+  if (!LOG.length){ toastMsg("No data to export."); return; }
+  const rows = [["start","end","minutes","subject","note"]];
+  for(const s of LOG){
+    rows.push([s.start.toISOString(), s.end.toISOString(), s.minutes, s.subject||"", s.note||""]);
+  }
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  downloadBlob(csv, "study-tracker.csv", "text/csv;charset=utf-8;");
+}
+function exportJson(){
+  const payload = {
+    version: APP_VERSION,
+    goal: Number(goalEl.value)||0,
+    subjects: [...subjectsSet],
+    log: LOG.map(s=>({ ...s, start: s.start.toISOString(), end: s.end.toISOString() }))
+  };
+  downloadBlob(JSON.stringify(payload,null,2), "study-tracker-backup.json", "application/json");
+}
+function downloadBlob(content, filename, type){
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function importJson(){
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "application/json";
+  inp.onchange = async (e)=>{
+    const f = e.target.files?.[0]; if(!f) return;
+    try{
+      const text = await f.text();
+      const data = JSON.parse(text);
+      if(!Array.isArray(data.log)) throw new Error("Invalid file format.");
+      const nextLOG = data.log.map(s=>({
+        start: new Date(s.start), end: new Date(s.end),
+        minutes: Math.round(Number(s.minutes||0)*100)/100,
+        subject: s.subject || null, note: s.note || null
+      }));
+      LOG = nextLOG;
+      saveLog();
+      subjectsSet = new Set(Array.isArray(data.subjects)? data.subjects : []);
+      localStorage.setItem(LS_SUBJECTS, JSON.stringify([...subjectsSet]));
+      if (typeof data.goal === "number"){ goalEl.value = clamp(data.goal,0,24); localStorage.setItem(LS_GOAL, goalEl.value); }
+      renderLog(); renderTotals(); refreshSubjectList();
+      toastMsg("Imported backup successfully ✅");
+    }catch(err){
+      toastMsg("Import failed: "+(err.message||"Unknown error"), "error");
+    }
+  };
+  inp.click();
+}
+
+/* ========================== KEYBOARD SHORTCUTS ========================== */
+function isTyping(){
+  const a = document.activeElement;
+  return a && (a.tagName === "INPUT" || a.isContentEditable);
+}
+window.addEventListener("keydown", (e)=>{
+  if (isTyping()) return;
+  if (e.code === "Space"){ e.preventDefault(); (session.running ? stop : start)(); }
+  else if (e.key.toLowerCase() === "r"){ resetToday(); }
+  else if (e.key.toLowerCase() === "f"){ finishDayBtn.click(); }
+  else if (e.key.toLowerCase() === "e"){ exportCsv(); }
+  else if (e.key.toLowerCase() === "j"){ exportJson(); }
+  else if (e.key.toLowerCase() === "i"){ importJson(); }
+  else if (e.key.toLowerCase() === "s"){ P.state.running ? pomoPause() : pomoStart(); }
+  else if (e.key.toLowerCase() === "k"){ pomoSkip(); }
+});
+
+/* ========================== BEFORE UNLOAD SAFETY ========================== */
+window.addEventListener("beforeunload", (e)=>{
+  if (session.running || P.state.running){
+    e.preventDefault(); e.returnValue = ""; // show prompt
+  }
+});
+
 /* ========================== BOOT ========================== */
 renderLog(); renderTotals(); // renderTotals() calls renderChart7()
 initBigClock();
@@ -834,23 +1022,10 @@ clearAllBtn.addEventListener("click", ()=>{
   if(confirm("Delete ALL saved sessions?")){ LOG=[]; saveLog(); renderLog(); renderTotals(); toastMsg("All data cleared."); }
 });
 exportCsvBtn.addEventListener("click", exportCsv);
+exportJsonBtn.addEventListener("click", exportJson);
+importJsonBtn.addEventListener("click", importJson);
 
 initPomo();
-
-/* ======= CSV EXPORT (kept from your version) ======= */
-function exportCsv(){
-  if (!LOG.length){ toastMsg("No data to export."); return; }
-  const rows = [["start","end","minutes","subject","note"]];
-  for(const s of LOG){
-    rows.push([s.start.toISOString(), s.end.toISOString(), s.minutes, s.subject||"", s.note||""]);
-  }
-  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
-  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = "study-tracker.csv"; a.click();
-  URL.revokeObjectURL(url);
-}
 </script>
 </body>
 </html>
