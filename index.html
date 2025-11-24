@@ -1,4 +1,4 @@
-<!-- /index.html (Enhanced Study Tracker) -->
+<!-- /index.html (Enhanced Study Tracker with local dateKey fix) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -364,7 +364,13 @@ const pad = n => String(n).padStart(2, "0");
 const fmtTime = secs => `${pad(Math.floor(secs/3600))}:${pad(Math.floor((secs%3600)/60))}:${pad(secs%60)}`;
 const fmtMS = secs => `${pad(Math.floor(secs/60))}:${pad(secs%60)}`;
 const fmtHM = m => `${Math.floor(m/60)}h ${Math.round(m%60)}m`;
-const dateKey = d => d.toISOString().slice(0,10);
+
+// FIXED: use LOCAL date parts instead of UTC ISO so "today" flips at local midnight
+const dateKey = (d) => {
+  const dt = (d instanceof Date) ? d : new Date(d);
+  return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+};
+
 const human = dt => new Date(dt).toLocaleString([], {hour12:false});
 const saveLog = () => localStorage.setItem(LS_KEY, JSON.stringify(LOG));
 const $ = id => document.getElementById(id);
@@ -412,7 +418,6 @@ function migrateIfNeeded(){
   const cur = Number(localStorage.getItem(LS_VERSION) || 1);
   if (cur >= APP_VERSION) return;
 
-  // v2: normalize minutes to Number(2-decimals), ensure dates as ISO strings in LS payload (already handled on save)
   if (cur < 2){
     LOG = LOG.map(r => ({
       ...r,
@@ -489,8 +494,7 @@ function renderLog(){
   const body = $("logBody");
   if(LOG.length===0){ body.innerHTML = `<tr><td colspan="6" class="empty">No sessions yet.</td></tr>`; return; }
   body.innerHTML = LOG.slice().reverse().slice(0,120).map((s, idxRev)=>{
-    const idx = LOG.length - 1 - idxRev; // original index
-    const sid = `row-${idx}`;
+    const idx = LOG.length - 1 - idxRev;
     return `
       <tr data-idx="${idx}">
         <td>${human(s.start)}</td>
