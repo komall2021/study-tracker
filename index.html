@@ -174,7 +174,7 @@
 
         <div class="row" style="margin-top:10px">
           <div>
-            <label for="goal">Daily goal (hours)</label>
+            <label for="goal"> Koshs' Daily goal (hours)</label>
             <input id="goal" type="number" min="0" max="24" step="0.5" value="6" />
           </div>
           <div>
@@ -252,28 +252,11 @@
           </div>
         </div>
 
+        <!-- MOVED: Pomodoro placed directly below Daily goal -->
         <div class="divider"></div>
-
-        <div class="row-3" id="statsRow" aria-label="Stats">
-          <div class="badge" id="statWeek">🗓️ This week: 0.0h</div>
-          <div class="badge" id="statAvg">📈 Avg/day: 0.0h</div>
-          <div class="badge" id="statBest">🏆 Best streak: 0 days</div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div>
-          <h3 class="section-title">By subject (30 days)</h3>
-          <table>
-            <thead><tr><th>Subject</th><th class="right">Hours</th></tr></thead>
-            <tbody id="bySubjectBody"><tr><td colspan="2" class="empty">No data yet.</td></tr></tbody>
-          </table>
-        </div>
-
-        <!-- Pomodoro -->
         <div class="pomo">
           <div class="pomo-head">
-            <div class="pomo-title">Pomodoro <span class="kbd">S</span> start/pause • <span class="kbd">K</span> skip</div>
+            <div class="pomo-title"> Koshs' Pomodoro <span class="kbd">S</span> start/pause • <span class="kbd">K</span> skip</div>
             <div id="pomoCycleInfo" class="chip phase-work">Cycle 1 • Work</div>
           </div>
           <div class="pomo-wrap">
@@ -334,6 +317,24 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Stats stay -->
+        <div class="divider"></div>
+        <div class="row-3" id="statsRow" aria-label="Stats">
+          <div class="badge" id="statWeek">🗓️ This week: 0.0h</div>
+          <div class="badge" id="statAvg">📈 Avg/day: 0.0h</div>
+          <div class="badge" id="statBest">🏆 Best streak: 0 days</div>
+        </div>
+
+        <!-- By subject moved to the very end -->
+        <div class="divider"></div>
+        <div>
+          <h3 class="section-title">By subject (30 days)</h3>
+          <table>
+            <thead><tr><th>Subject</th><th class="right">Hours</th></tr></thead>
+            <tbody id="bySubjectBody"><tr><td colspan="2" class="empty">No data yet.</td></tr></tbody>
+          </table>
         </div>
       </section>
     </div>
@@ -674,7 +675,7 @@ function tick(){
   updateBigClock(secs);
 }
 function start(){
-  if(isDayFinished()){ toastMsg("You've finished today. Click “Resume today” to reopen.", "warn"); return; }
+  if(isDayFinished()){ toastMsg("You've finished today Kosh. Click “Resume today” to reopen.", "warn"); return; }
   if(session.running) return;
   session.running = true; session.start = Date.now();
   session.timerId = setInterval(tick, 1000);
@@ -897,10 +898,10 @@ function nextPhase(fromSkip=false, endedPhase=null){
     Sound.play(endedPhase || "work");
     const ended = endedPhase || "work";
     const goingTo = P.state.phase;
-    const title = ended === "work" ? "Focus block complete 🎉" : "Break over ⏰";
+    const title = ended === "work" ? "Focus block complete Koshda 🎉" : "Break over koshdu ⏰";
     const body  = ended === "work"
-      ? (goingTo === "long" ? "Long break time — recharge!" : "Short break time — stretch!")
-      : "Back to work — you got this!";
+      ? (goingTo === "long" ? "Long break time Kosh — recharge!" : "Short break time  — stretch asshole!")
+      : "Back to work cutu — you got this yaayy!";
     Notifier.send(title, body);
   }
   toastMsg(fromSkip ? "Skipped to next phase." : `Time! ${P.state.phase.toUpperCase()} now.`);
